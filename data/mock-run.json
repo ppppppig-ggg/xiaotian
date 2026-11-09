@@ -1,0 +1,101 @@
+[
+  {
+    "delay": 0,
+    "event": { "node": "extractor", "status": "running" }
+  },
+  {
+    "delay": 900,
+    "event": {
+      "node": "extractor",
+      "status": "done",
+      "payload": {
+        "event": {
+          "name": "传智杯全国大学生计算机应用能力大赛",
+          "organizer": ["传智教育"],
+          "level": "国家级",
+          "registration": { "deadline": "2026-11-20", "url": "https://www.itcast.cn/" },
+          "submission": { "deadline": "2026-12-15" },
+          "tracks": [{ "name": "Vibe Coding", "requirement": "AI + Web 轻量应用" }]
+        },
+        "confidence": 0.86,
+        "missing_fields": [],
+        "warnings": []
+      }
+    }
+  },
+  {
+    "delay": 900,
+    "event": { "node": "fact_checker", "status": "running" }
+  },
+  {
+    "delay": 900,
+    "event": {
+      "node": "fact_checker",
+      "status": "done",
+      "payload": {
+        "verdict": "green",
+        "authority_score": 85,
+        "risk_flags": [],
+        "known_facts": ["本地白名单命中：传智杯"],
+        "verify_steps": [
+          {
+            "action": "核对官网报名入口",
+            "where": "https://www.itcast.cn/",
+            "pass_criteria": "能看到本届赛事通知"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "delay": 900,
+    "event": { "node": "matchmaker", "status": "running" }
+  },
+  {
+    "delay": 900,
+    "event": {
+      "node": "matchmaker",
+      "status": "done",
+      "payload": {
+        "fit_score": 78,
+        "recommendation": "可试",
+        "breakdown": {
+          "skill_fit": { "score": 85, "reason": "前端栈对口" },
+          "time_fit": { "score": 70, "reason": "剩余 5 周" },
+          "goal_value": { "score": 75, "reason": "与求职目标相关" },
+          "access_fit": { "score": 80, "reason": "年级专业符合" }
+        },
+        "hard_blockers": [],
+        "next_actions": ["确认组队", "准备演示视频"]
+      }
+    }
+  },
+  {
+    "delay": 900,
+    "event": { "node": "planner", "status": "running" }
+  },
+  {
+    "delay": 900,
+    "event": {
+      "node": "planner",
+      "status": "done",
+      "payload": {
+        "feasible": true,
+        "total_weeks": 5,
+        "buffered_weeks": 1,
+        "phases": [
+          {
+            "name": "信息核实与组队",
+            "week_range": "W1",
+            "tasks": [{ "task": "核对官网通知", "owner": "我", "output": "确认截图" }]
+          }
+        ],
+        "risk_note": "时间偏紧，建议压缩选题范围"
+      }
+    }
+  },
+  {
+    "delay": 600,
+    "event": { "node": "all", "status": "done" }
+  }
+]
