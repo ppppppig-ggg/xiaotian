@@ -29,3 +29,6 @@ dist-ssr
 *.sw?
 
 # 注意：docs/prompt-log 下的截图是参赛证据材料，不要忽略
+
+# 评测原始输出（体积大，报告 report.md 会提交）
+eval/latest.json

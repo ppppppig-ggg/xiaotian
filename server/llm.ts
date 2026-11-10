@@ -62,6 +62,12 @@ export async function callJSON<T>(system: string, user: string, options: CallOpt
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const startedAt = Date.now()
+
+    // 故障注入：用于验证降级路径，生产环境不设置该变量
+    const fault = process.env.LLM_FAULT
+    if (fault === 'http_error') throw new LLMError('模拟故障：模型接口返回 500')
+    if (fault === 'timeout') throw new LLMError('模拟故障：请求超时')
+
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
 
@@ -95,7 +101,9 @@ export async function callJSON<T>(system: string, user: string, options: CallOpt
         usage?: { total_tokens?: number }
       }
 
-      const content = payload.choices?.[0]?.message?.content ?? ''
+      const rawContent = payload.choices?.[0]?.message?.content ?? ''
+      // 故障注入：返回一段不是 JSON 的内容，验证解析失败后的重试与报错
+      const content = fault === 'bad_json' ? '抱歉，我无法按你要求的格式输出。' : rawContent
       if (!content) throw new LLMError('模型返回内容为空')
 
       const parsed = parseLooseJson(content)
@@ -117,5 +125,7 @@ export async function callJSON<T>(system: string, user: string, options: CallOpt
     }
   }
 
-  throw new LLMError('模型调用失败', lastError)
+  // 把最底层的失败原因带上，否则调用方只能看到「模型调用失败」这种没信息量的话
+  const cause = lastError instanceof Error ? lastError.message : String(lastError ?? '未知错误')
+  throw new LLMError(`模型调用失败：${cause}`, lastError)
 }

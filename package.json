@@ -12,6 +12,8 @@
     "dev:server": "tsx watch server/index.ts",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "eval": "node eval/run.mjs",
+    "eval:fault": "node eval/fault.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

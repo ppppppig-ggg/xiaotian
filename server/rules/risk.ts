@@ -101,7 +101,21 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     })
   }
 
-  // 2. 来源渠道可信度
+  // 2. 结构完整度（正向信号）
+  const url = typeof registration.url === 'string' ? registration.url : ''
+  if (/^https:\/\//i.test(url)) {
+    score += 10
+    facts.push('提供了 HTTPS 官方链接')
+  }
+  if (registration.deadline && submission.deadline) {
+    score += 5
+    facts.push('报名与提交两条时间线均明确')
+  }
+  if (organizer.length > 0) {
+    score += 5
+  }
+
+  // 3. 来源渠道可信度
   if (sourceType === 'group_chat' || sourceType === 'social') {
     score -= 15
     flags.push({
@@ -111,7 +125,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     })
   }
 
-  // 3. 关键字段缺失
+  // 4. 关键字段缺失
   if (!registration.url) {
     score -= 10
     flags.push({
@@ -138,7 +152,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     })
   }
 
-  // 4. 话术检测
+  // 5. 话术检测
   const scamHit = SCAM_PATTERNS.find((pattern) => combined.includes(pattern))
   if (scamHit) {
     score -= 30
@@ -150,7 +164,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     })
   }
 
-  // 5. 多版本冲突
+  // 6. 多版本冲突
   if (conflicts.length > 0) {
     score -= 10
     flags.push({
@@ -160,7 +174,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     })
   }
 
-  // 6. 已经截止
+  // 7. 已经截止
   const deadline = registration.deadline ?? submission.deadline
   if (typeof deadline === 'string' && deadline) {
     const time = new Date(deadline).getTime()

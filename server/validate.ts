@@ -82,12 +82,13 @@ export function validateExtraction(raw: unknown, sourceText: string): Validation
     if (typeof value === 'string' && value) checkDate(path, value, errors)
   }
 
-  // 3. conflicts 里的字段不能为 null
+  // 3. conflicts 必须给出至少两个不同来源的值
+  //    注意：声明了冲突的字段本来就该留 null（不擅自择一），所以这里不检查字段是否为空
   const conflicts: any[] = Array.isArray(data.conflicts) ? data.conflicts : []
   for (const conflict of conflicts) {
-    const path = conflict?.field
-    if (typeof path === 'string' && path.includes('.') && isEmpty(getPath(data, path))) {
-      errors.push(`conflicts 声明了 ${path} 有冲突，但该字段为空`)
+    const values = Array.isArray(conflict?.values) ? conflict.values : []
+    if (values.length < 2) {
+      errors.push(`conflicts 中 ${conflict?.field ?? '未知字段'} 至少需要两个来源的值`)
     }
   }
 
