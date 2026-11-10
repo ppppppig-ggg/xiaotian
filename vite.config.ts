@@ -8,9 +8,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // 后端 Express 跑在 8787，前端统一走 /api，避免跨域
+      // 后端 Express 默认跑在 8787，可用 SERVER_PORT 改端口；前端统一走 /api。
       '/api': {
-        target: 'http://localhost:8787',
+        target: `http://localhost:${process.env.SERVER_PORT ?? '8787'}`,
         changeOrigin: true,
       },
     },
