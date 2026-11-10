@@ -4,6 +4,8 @@
 
 参赛项目 · 传智杯 AI 创新应用挑战赛（Vibe Coding 赛道）
 
+![产品演示](docs/prompt-log/demo.gif)
+
 ---
 
 ## 它解决什么问题
