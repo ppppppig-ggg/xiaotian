@@ -1,8 +1,10 @@
 import type { NodeId } from '../types'
+import { downloadMarkdownReport } from '../lib/report'
 
 interface Props {
   finished: boolean
   payloads: Record<NodeId, any>
+  sourceType: string
 }
 
 const VERDICT_STYLE: Record<string, { label: string; className: string }> = {
@@ -33,8 +35,9 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: s
   )
 }
 
-export function ReportPanel({ finished, payloads }: Props) {
+export function ReportPanel({ finished, payloads, sourceType }: Props) {
   const extractor = payloads.extractor
+  const event = extractor?.event ?? {}
   const checker = payloads.fact_checker
   const matcher = payloads.matchmaker
   const planner = payloads.planner
@@ -61,17 +64,30 @@ export function ReportPanel({ finished, payloads }: Props) {
 
   const isEvent = extractor?.is_event !== false
   const verdict = checker ? (VERDICT_STYLE[checker.verdict] ?? VERDICT_STYLE.yellow) : null
+  const registrationUrl = typeof event.registration?.url === 'string' ? event.registration.url : ''
+  const safeRegistrationUrl = /^https?:\/\//i.test(registrationUrl)
 
   return (
     <div className="animate-fade-in-up h-full space-y-4 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/40 p-4">
       <div>
-        <p className="text-[11px] uppercase tracking-widest text-slate-500">决策报告</p>
-        <h2 className="mt-1 text-base font-semibold leading-snug text-slate-100">
-          {isEvent ? (extractor?.event?.name ?? '未识别出赛事') : '这段内容里没有识别出赛事'}
-        </h2>
-        {isEvent && checker?.verdict_reason && (
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{checker.verdict_reason}</p>
-        )}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-widest text-slate-500">决策报告</p>
+            <h2 className="mt-1 text-base font-semibold leading-snug text-slate-100">
+              {isEvent ? (event.name ?? '未识别出赛事') : '这段内容里没有识别出赛事'}
+            </h2>
+            {isEvent && checker?.verdict_reason && (
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{checker.verdict_reason}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => downloadMarkdownReport(payloads, sourceType)}
+            className="shrink-0 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-sky-500/50 hover:text-sky-200"
+          >
+            导出报告
+          </button>
+        </div>
       </div>
 
       {!isEvent ? (
@@ -80,6 +96,53 @@ export function ReportPanel({ finished, payloads }: Props) {
         </p>
       ) : (
         <>
+          <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-3">
+            <p className="text-xs font-medium text-slate-300">抽取到的赛事信息</p>
+            <dl className="mt-2 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-xs">
+              <dt className="text-slate-500">主办方</dt>
+              <dd className="break-words text-slate-300">{event.organizer?.join('、') || '未提供'}</dd>
+              <dt className="text-slate-500">赛事级别</dt>
+              <dd className="text-slate-300">{event.level || '未提供'}</dd>
+              <dt className="text-slate-500">报名截止</dt>
+              <dd className="text-slate-300">{event.registration?.deadline || event.registration?.raw_time_text || '未提供'}</dd>
+              <dt className="text-slate-500">报名入口</dt>
+              <dd className="break-all text-sky-300">
+                {safeRegistrationUrl ? (
+                  <a href={registrationUrl} target="_blank" rel="noreferrer" className="underline decoration-sky-500/40 underline-offset-2">
+                    {registrationUrl}
+                  </a>
+                ) : registrationUrl || '未提供'}
+              </dd>
+              <dt className="text-slate-500">作品提交</dt>
+              <dd className="text-slate-300">{event.submission?.deadline || event.submission?.raw_time_text || '未提供'}</dd>
+              <dt className="text-slate-500">参赛资格</dt>
+              <dd className="break-words text-slate-300">{event.eligibility || '未提供'}</dd>
+              <dt className="text-slate-500">赛道</dt>
+              <dd className="break-words text-slate-300">
+                {event.tracks?.map((track: any) => track.name).filter(Boolean).join('、') || '未提供'}
+              </dd>
+            </dl>
+            {Object.keys(extractor?.evidence ?? {}).length > 0 && (
+              <details className="mt-3 border-t border-slate-800 pt-2">
+                <summary className="cursor-pointer text-[11px] text-sky-300">查看原文证据摘录</summary>
+                <dl className="mt-2 space-y-2 text-[11px]">
+                  {Object.entries(extractor.evidence).map(([field, quote]: [string, any]) => (
+                    <div key={field}>
+                      <dt className="text-slate-500">{field}</dt>
+                      <dd className="mt-0.5 break-words text-slate-300">“{String(quote)}”</dd>
+                    </div>
+                  ))}
+                </dl>
+              </details>
+            )}
+            {(extractor?.warnings?.length > 0 || extractor?.missing_fields?.length > 0) && (
+              <div className="mt-3 space-y-1 border-t border-slate-800 pt-2 text-[11px] text-amber-300/80">
+                {extractor.warnings?.map((warning: string, index: number) => <p key={`warning-${index}`}>提示：{warning}</p>)}
+                {extractor.missing_fields?.length > 0 && <p>未能从原文确认：{extractor.missing_fields.join('、')}</p>}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <Metric label="风险结论" value={verdict?.label ?? '—'} tone={verdict?.className} />
             <Metric label="权威度" value={checker ? `${checker.authority_score}` : '—'} />
