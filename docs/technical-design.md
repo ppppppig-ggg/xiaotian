@@ -505,7 +505,7 @@ function matchesDomain(host: string, domain: string): boolean {
 ### 8.4 无障碍与性能
 
 - 动画遵守 `prefers-reduced-motion`，关闭后不播放位移动画。
-- 无图表库、无状态管理库，首屏 JS 约 250 KB（gzip 78 KB）。
+- 无图表库、无状态管理库，首屏 JS 约 255 KB（gzip 80 KB）。
 - 窄屏自动堆叠为单栏。
 
 ### 8.5 AI 响应状态可视化
@@ -667,7 +667,7 @@ npm run lint            # 静态检查
 
 | 关注点 | 现状 |
 |---|---|
-| 首屏体积 | 250 KB（gzip 78 KB），无第三方运行时依赖 |
+| 首屏体积 | 255 KB（gzip 80 KB），无第三方运行时依赖 |
 | 构建耗时 | 约 1.3 秒 |
 | 单次分析 | 约 12 秒（四次模型调用串行） |
 | 无关内容 | 短路后约 1.7 秒，省下三次调用 |
