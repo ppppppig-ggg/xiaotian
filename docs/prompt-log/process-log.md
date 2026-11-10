@@ -2,6 +2,7 @@
 
 > 记录「赛博赛事雷达 / CampusRace Radar」从空目录到可运行产品的完整过程。
 > 用途：作为「过程可复现」的文字佐证，与 `docs/prompt-log/` 下的录屏、截图互相印证。
+> **证据边界：**本文是开发回顾，不是 AI 工具的完整对话导出。「原话要点」等内容是摘要。提交时仍需从实际使用的 AI 工具导出至少 3 个核心功能迭代的完整 Prompt、AI 回复和人工反馈，并附原始截图或录屏；不要把本回顾改写成伪造的逐字记录。
 
 - 项目：传智杯 AI 创新应用挑战赛 · Vibe Coding 赛道
 - 仓库：https://github.com/ppppppig-ggg/xiaotian
@@ -369,7 +370,7 @@ if (risk.verdict === 'red' && matchResult.recommendation !== '不建议') {
 
 ```bash
 # 1. 安装与构建
-npm install
+npm ci
 npm run build          # 期望：✓ built，0 error
 npm run lint           # 期望：0 warning 0 error
 
@@ -379,7 +380,7 @@ npm run dev
 # 3. 验证 SSE 是真流式（看时间戳是否均匀递增）
 curl -N -X POST http://localhost:8787/api/analyze \
   -H "Content-Type: application/json" \
-  -d "{\"text\":\"传智杯报名截止 2026-11-20\"}"
+  -d "{\"sampleId\":\"official_notice\",\"text\":\"传智杯报名截止 2026-11-20\"}"
 
 # 4. 切换真假数据
 #    .env 里 USE_MOCK=true  → 本地假数据，不消耗额度
@@ -392,10 +393,11 @@ curl -N -X POST http://localhost:8787/api/analyze \
 
 | 材料 | 位置 | 说明 |
 |---|---|---|
-| 产品演示动图 | `docs/prompt-log/demo.gif` | 真模型模式录制，含四节点依次点亮 |
-| 本过程日志 | `docs/prompt-log/process-log.md` | 文字佐证 |
-| 录屏（待补） | `docs/prompt-log/*.mp4` | 与 AI 协作的过程录像 |
-| 代码演进 | GitHub 提交历史 | 8 次提交，按功能粒度拆分 |
+| 产品演示动图 | `docs/prompt-log/demo.gif` | 已有 GIF，仅作预览，不能替代评审要求的 MP4 |
+| 本过程日志 | `docs/prompt-log/process-log.md` | 开发回顾摘要，不是原始对话导出 |
+| 原始 Prompt 链 | `docs/prompt-log/conversation-*.md` | 待从实际 AI 工具导出，至少覆盖 3 个核心功能迭代 |
+| 评审视频 | `docs/prompt-log/video-final.mp4` | 待录制为 5–8 分钟 1080p，含至少 2 分钟真实 AI 协同过程 |
+| 代码演进 | GitHub 提交历史 | 按功能粒度拆分；准确数量以 `git log --oneline` 为准 |
 
 ---
 

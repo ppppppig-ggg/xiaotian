@@ -32,20 +32,15 @@
 ## 快速开始
 
 ```bash
-# 1. 准备环境变量（没有 API Key 也能跑，用 mock 模式）
-cp .env.example .env
-
-# 2. 安装依赖
-npm install
-
-# 3. 同时启动前后端
+# 1. 安装依赖并启动
+npm ci
 npm run dev
 ```
 
 - 前端：http://localhost:5173
-- 后端：http://localhost:8787（`POST /api/analyze`，SSE 推流）
+- 后端：http://localhost:8787（`POST /api/analyze`，SSE 推流；`GET /api/health` 查看模式）
 
-`.env` 里 `USE_MOCK=true` 时使用本地假数据回放，不消耗任何 API 额度，断网也能完整演示。
+默认 `USE_MOCK=true`，无需 API Key。演示模式按四个预置样例分别回放对应结果，不调用外部模型；手动输入的自定义内容需要切到实时模式才会分析。完整的 10 分钟复现步骤见 [复现指南](docs/reproduction.md)。
 
 ## 架构
 
@@ -83,7 +78,7 @@ flowchart LR
 | 前端 | Vite 8 + React 19 + TypeScript 7 | 无 UI 组件库，Tailwind 4 手写样式 |
 | 后端 | Node + Express 5 | 不引数据库，白名单用静态 JSON |
 | 通信 | SSE（Server-Sent Events） | 单向推流，节点逐个点亮 |
-| 模型 | OpenAI 兼容协议 | 可在 DeepSeek / 通义 / Gemini 之间一行环境变量切换 |
+| 模型 | OpenAI 兼容协议 | 通过 `LLM_BASE_URL` 与 `LLM_MODEL` 指向兼容服务 |
 
 ## 目录结构
 
@@ -93,21 +88,25 @@ campusrace-radar/
 │  ├─ index.ts          # Express + SSE 入口，四节点串行编排
 │  ├─ agents/           # 四个 Agent 各一个文件
 │  ├─ prompts/          # 四个 System Prompt（与文档版本一致）
-│  ├─ rules/risk.ts     # 确定性风险规则（白名单 + 7 类信号）
+│  ├─ rules/risk.ts     # 确定性风险规则（白名单、域名、风险与正向信号）
 │  ├─ llm.ts            # provider 无关的模型调用层（超时/重试/故障注入）
 │  └─ validate.ts       # evidence 逐字校验、日期校验、冲突校验
 ├─ src/
 │  ├─ components/       # 节点卡片、报告区、画像表单
 │  ├─ lib/sse.ts        # SSE 流解析（纯函数）
-│  └─ lib/profile.ts    # 画像类型与解析
+│  ├─ lib/profile.ts    # 画像类型与解析
+│  └─ lib/report.ts     # Markdown 决策报告导出
 ├─ data/
 │  ├─ whitelist.json    # 官方赛事白名单（可扩展）
-│  └─ mock-run.json     # 演示回放数据
+│  ├─ mock-run.json     # 正常赛事的演示回放
+│  └─ mock-cases.json   # 群聊、可疑赛事、无效内容的回放
 ├─ eval/
 │  ├─ cases.json        # 12 条评测用例
 │  ├─ run.mjs           # 批量评测
 │  ├─ fault.mjs         # 故障注入
 │  └─ report.md         # 评测报告（生成物，已提交作证据）
+├─ scripts/
+│  └─ render_technical_pdf.py # 从 Markdown 生成技术说明 PDF
 └─ docs/
    ├─ defense-qa.md     # 答辩问答
    ├─ video-script.md   # 视频分镜
@@ -122,16 +121,21 @@ campusrace-radar/
 | [答辩问答准备](docs/defense-qa.md) | 12 个可能被追问的问题与回答思路 |
 | [演示视频脚本](docs/video-script.md) | 产品演示 + AI 协同过程的分镜表 |
 | [评测报告](eval/report.md) | 12 条用例的逐项结果与准确率 |
+| [技术设计说明](docs/technical-design.md) | 架构、Prompt 约束、规则、复现方式与局限 |
+| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 评审提交用技术文档，30 页以内 |
+| [提交检查清单](docs/submission-checklist.md) | 按评审要求逐项确认代码与材料 |
+| [10 分钟复现指南](docs/reproduction.md) | Windows 环境安装、启动、演示与排错 |
 | [产品演示动图](docs/prompt-log/demo.gif) | 四节点依次点亮到决策报告 |
 
 ## 过程材料
 
 `docs/prompt-log/` 目录存放参赛证据材料：
 
-- `demo.gif` —— 产品演示动图（已提供）
-- `video-a-product.mp4` —— 产品演示视频
-- `video-b-ai-process.mp4` —— AI 协同过程录屏（过程可复现的硬性材料）
-- `screenshot-*.png` —— 关键节点截图
+- `demo.gif` —— 产品演示动图（已提供，不能替代 MP4）
+- `video-final.mp4` —— 5–8 分钟、1080p 的演示视频，至少 2 分钟展示真实 AI 协同过程（待录制）
+- `conversation-*.md` / `screenshot-*.png` —— 至少 3 个核心功能迭代的完整 Prompt 链与原始截图/导出（待补齐）
+
+`process-log.md` 是开发过程回顾，不能代替 AI 工具导出的完整对话。不要用事后编写的摘要冒充原始 Prompt 记录。
 
 ## 评测
 
@@ -141,15 +145,17 @@ npm run eval           # 批量跑 eval/cases.json，生成 eval/report.md
 npm run eval:fault     # 故障注入：模型输出坏 JSON / 接口 500，验证优雅失败
 ```
 
-当前结果（12 条用例，含诈骗、过期、冲突、注入、OCR 噪声等对抗样本）：
+仓库上次记录的结果（12 条用例，含诈骗、过期、冲突、注入、OCR 噪声等对抗样本）：
 
 | 指标 | 数值 |
 |---|---|
 | 用例全通过率 | 100% |
 | 单项检查通过率 | 100% |
-| 单条延迟（中位） | 10.9s |
+| 单条延迟（中位） | 11.4s |
 
 > 说明：测试集为自建，覆盖 12 类场景，**不代表真实世界的准确率**。评测的价值在于把「模型可能怎么坏」变成可重复执行的检查。
+>
+> 以上数字来自仓库已有的评测报告。本轮修改风险规则后尚未重新生成报告，不能视为本轮代码的回归结果；提交前请按复现指南重新运行评测并更新报告。
 
 ## 开发进度
 
