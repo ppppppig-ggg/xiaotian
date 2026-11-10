@@ -1,0 +1,66 @@
+[
+  {
+    "id": "chuanzhibei",
+    "names": ["传智杯", "传智杯全国大学生计算机应用能力大赛"],
+    "organizer": ["传智教育"],
+    "domains": ["itcast.cn"],
+    "level": "国家级",
+    "note": "企业主办的全国性赛事，官网可查"
+  },
+  {
+    "id": "lanqiao",
+    "names": ["蓝桥杯", "蓝桥杯全国软件和信息技术专业人才大赛"],
+    "organizer": ["工业和信息化部人才交流中心"],
+    "domains": ["lanqiao.cn", "dasai.lanqiao.cn"],
+    "level": "国家级",
+    "note": "工信部人才交流中心主办"
+  },
+  {
+    "id": "jsj-design",
+    "names": ["中国大学生计算机设计大赛", "4C", "计算机设计大赛"],
+    "organizer": ["教育部高等学校计算机类专业教学指导委员会"],
+    "domains": ["jsjds.cn", "www.jsjds.cn"],
+    "level": "国家级",
+    "note": "教育部教指委主办"
+  },
+  {
+    "id": "internet-plus",
+    "names": ["互联网+", "中国国际大学生创新大赛", "互联网+大学生创新创业大赛"],
+    "organizer": ["教育部"],
+    "domains": ["cy.ncss.cn"],
+    "level": "国家级",
+    "note": "教育部主办，原名互联网+"
+  },
+  {
+    "id": "tiaozhanbei",
+    "names": ["挑战杯", "挑战杯全国大学生课外学术科技作品竞赛"],
+    "organizer": ["共青团中央", "中国科协", "教育部"],
+    "domains": ["tiaozhanbei.net"],
+    "level": "国家级",
+    "note": "共青团中央等主办"
+  },
+  {
+    "id": "mcm",
+    "names": ["数学建模", "全国大学生数学建模竞赛", "CUMCM"],
+    "organizer": ["中国工业与应用数学学会"],
+    "domains": ["mcm.edu.cn"],
+    "level": "国家级",
+    "note": "中国工业与应用数学学会主办"
+  },
+  {
+    "id": "daguangsai",
+    "names": ["大广赛", "全国大学生广告艺术大赛"],
+    "organizer": ["全国大学生广告艺术大赛组委会"],
+    "domains": ["sun-ada.net"],
+    "level": "国家级",
+    "note": "教育部高教司指导"
+  },
+  {
+    "id": "fwwb",
+    "names": ["服务外包创新创业大赛", "中国大学生服务外包创新创业大赛"],
+    "organizer": ["教育部", "商务部"],
+    "domains": ["fwwb.org.cn"],
+    "level": "国家级",
+    "note": "教育部、商务部主办"
+  }
+]

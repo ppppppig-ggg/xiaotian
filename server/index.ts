@@ -5,6 +5,9 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { extract } from './agents/extractor.js'
+import { factCheck } from './agents/fact-checker.js'
+import { match, type Profile } from './agents/matchmaker.js'
+import { plan } from './agents/planner.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -21,48 +24,6 @@ interface SseEvent {
   message?: string
 }
 
-/** Day 3 之前的占位数据：风险核查 / 匹配评估 / 备赛规划还没接真模型 */
-const PLACEHOLDER: Record<Exclude<NodeId, 'extractor'>, unknown> = {
-  fact_checker: {
-    verdict: 'green',
-    authority_score: 85,
-    risk_flags: [],
-    known_facts: ['本地白名单命中：传智杯'],
-    verify_steps: [
-      {
-        action: '核对官网报名入口',
-        where: 'https://www.itcast.cn/',
-        pass_criteria: '能看到本届赛事通知',
-      },
-    ],
-  },
-  matchmaker: {
-    fit_score: 78,
-    recommendation: '可试',
-    breakdown: {
-      skill_fit: { score: 85, reason: '前端栈对口' },
-      time_fit: { score: 70, reason: '剩余 5 周' },
-      goal_value: { score: 75, reason: '与求职目标相关' },
-      access_fit: { score: 80, reason: '年级专业符合' },
-    },
-    hard_blockers: [],
-    next_actions: ['确认组队', '准备演示视频'],
-  },
-  planner: {
-    feasible: true,
-    total_weeks: 5,
-    buffered_weeks: 1,
-    phases: [
-      {
-        name: '信息核实与组队',
-        week_range: 'W1',
-        tasks: [{ task: '核对官网通知', owner: '我', output: '确认截图' }],
-      },
-    ],
-    risk_note: '时间偏紧，建议压缩选题范围',
-  },
-}
-
 const MOCK_SEQUENCE: Array<{ delay: number; event: SseEvent }> = JSON.parse(
   readFileSync(resolve(__dirname, '../data/mock-run.json'), 'utf-8'),
 )
@@ -72,6 +33,18 @@ app.use(cors())
 app.use(express.json({ limit: '2mb' }))
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+
+function readProfile(body: any): Profile {
+  return {
+    major: typeof body?.major === 'string' ? body.major.slice(0, 40) : undefined,
+    grade: typeof body?.grade === 'string' ? body.grade.slice(0, 20) : undefined,
+    skills: Array.isArray(body?.skills)
+      ? body.skills.filter((s: unknown) => typeof s === 'string').slice(0, 10)
+      : undefined,
+    goal: typeof body?.goal === 'string' ? body.goal.slice(0, 40) : undefined,
+    hoursPerWeek: Number.isFinite(Number(body?.hoursPerWeek)) ? Number(body.hoursPerWeek) : undefined,
+  }
+}
 
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -88,6 +61,9 @@ app.post('/api/analyze', async (req, res) => {
     res.status(400).json({ error: '缺少 text 字段' })
     return
   }
+
+  const sourceType = typeof req.body?.sourceType === 'string' ? req.body.sourceType : 'unknown'
+  const profile = readProfile(req.body)
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
@@ -119,19 +95,37 @@ app.post('/api/analyze', async (req, res) => {
       return
     }
 
-    // 真模型链路：先接信息提取，其余节点仍用占位数据
+    // ① 信息提取
     send({ node: 'extractor', status: 'running' })
-    const extracted = await extract({
-      text,
-      sourceType: typeof req.body?.sourceType === 'string' ? req.body.sourceType : 'unknown',
-    })
-    send({ node: 'extractor', status: 'done', payload: extracted })
+    const extraction = await extract({ text, sourceType })
+    send({ node: 'extractor', status: 'done', payload: extraction })
+    if (aborted) return
 
-    for (const node of ['fact_checker', 'matchmaker', 'planner'] as const) {
-      send({ node, status: 'running' })
-      await sleep(800)
-      send({ node, status: 'done', payload: PLACEHOLDER[node] })
+    // ② 风险核查（规则算分 + 模型解释）
+    send({ node: 'fact_checker', status: 'running' })
+    const risk = await factCheck(extraction, text, sourceType)
+    send({ node: 'fact_checker', status: 'done', payload: risk })
+    if (aborted) return
+
+    // ③ 匹配评估
+    send({ node: 'matchmaker', status: 'running' })
+    const matchResult = await match(extraction?.event ?? {}, profile)
+
+    // 风险优先于匹配：核查判红的赛事，无论契合度多高都不推荐
+    if (risk.verdict === 'red' && matchResult.recommendation !== '不建议') {
+      matchResult.recommendation = '不建议'
+      matchResult.hard_blockers = [
+        `风险核查未通过（权威度 ${risk.authority_score}），不建议投入时间`,
+      ]
     }
+
+    send({ node: 'matchmaker', status: 'done', payload: matchResult })
+    if (aborted) return
+
+    // ④ 备赛规划
+    send({ node: 'planner', status: 'running' })
+    const planResult = await plan(extraction?.event ?? {}, profile, matchResult)
+    send({ node: 'planner', status: 'done', payload: planResult })
 
     send({ node: 'all', status: 'done' })
   } catch (error) {

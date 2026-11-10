@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { NodeCard } from './components/NodeCard'
+import { ProfileForm } from './components/ProfileForm'
 import { ReportPanel } from './components/ReportPanel'
 import { createSseParser } from './lib/sse'
+import { EMPTY_PROFILE, PROFILE_STORAGE_KEY, parseSkills, type ProfileFormValue } from './lib/profile'
 import { NODES, type NodeId, type NodeStatus, type SseEvent } from './types'
 
 const EMPTY_STATUS: Record<NodeId, NodeStatus> = {
@@ -10,6 +12,8 @@ const EMPTY_STATUS: Record<NodeId, NodeStatus> = {
   matchmaker: 'idle',
   planner: 'idle',
 }
+
+const PROFILE_KEY = PROFILE_STORAGE_KEY
 
 interface State {
   statuses: Record<NodeId, NodeStatus>
@@ -56,23 +60,42 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-const SAMPLES: Array<{ label: string; text: string }> = [
+const SAMPLES: Array<{ label: string; text: string; sourceType: string }> = [
   {
     label: '公众号推文',
-    text: '【传智杯】第十届传智杯全国大学生计算机应用能力大赛正式启动！报名截止 2026-11-20，作品提交截止 2026-12-15。本届新增 Vibe Coding 赛道，要求以 AI 辅助完成轻量 Web 应用，评审重点关注过程可复现性。报名请登录官网 https://www.itcast.cn/ 提交材料。',
+    sourceType: 'wechat',
+    text: '【传智杯】第十届传智杯全国大学生计算机应用能力大赛正式启动！报名截止 2026-11-20，作品提交截止 2026-12-15。本届新增 Vibe Coding 赛道，要求以 AI 辅助完成轻量 Web 应用，评审重点关注过程可复现性。报名请登录官网 https://www.itcast.cn/ 提交材料。主办单位：传智教育。',
   },
   {
     label: '群聊消息',
+    sourceType: 'group_chat',
     text: '群主：那个传智杯下周三截止啊，想报的赶紧，我看群里说今年加了个 AI 编程赛道，具体规则你们去问学长。',
   },
   {
+    label: '可疑赛事',
+    sourceType: 'group_chat',
+    text: '【速报】全国青年创新大赛开始报名！无需考试，交钱即可拿证，保过保就业，保研必备！名额有限，先到先得，加微信 138xxxx8888 咨询。',
+  },
+  {
     label: '无效内容',
+    sourceType: 'social',
     text: '今天食堂的红烧肉又涨价了，谁懂啊，窗口阿姨说下周还要涨两块。',
   },
 ]
 
 export default function App() {
   const [text, setText] = useState('')
+  const [sourceType, setSourceType] = useState('wechat')
+  const [profile, setProfile] = useState<ProfileFormValue>(() => {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY)
+      if (raw) return { ...EMPTY_PROFILE, ...JSON.parse(raw) }
+    } catch {
+      // 忽略损坏的本地数据
+    }
+    return EMPTY_PROFILE
+  })
+
   const [state, dispatch] = useReducer(reducer, {
     statuses: { ...EMPTY_STATUS },
     payloads: {},
@@ -82,6 +105,10 @@ export default function App() {
 
   const abortRef = useRef<AbortController | null>(null)
   const running = Object.values(state.statuses).some((s) => s === 'running')
+
+  useEffect(() => {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  }, [profile])
 
   // 组件卸载时中断流，避免内存泄漏
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -99,7 +126,15 @@ export default function App() {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: content }),
+        body: JSON.stringify({
+          text: content,
+          sourceType,
+          major: profile.major,
+          grade: profile.grade,
+          skills: parseSkills(profile.skills),
+          goal: profile.goal,
+          hoursPerWeek: profile.hours,
+        }),
         signal: controller.signal,
       })
 
@@ -122,7 +157,7 @@ export default function App() {
       if ((error as Error).name === 'AbortError') return
       dispatch({ type: 'fail', message: (error as Error).message })
     }
-  }, [text])
+  }, [text, sourceType, profile])
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
@@ -137,8 +172,10 @@ export default function App() {
       </header>
 
       <main className="grid flex-1 grid-cols-[340px_minmax(0,1fr)_420px] gap-4 overflow-hidden p-4">
-        {/* 左：输入 */}
+        {/* 左：画像 + 输入 */}
         <section className="flex flex-col gap-3 overflow-hidden">
+          <ProfileForm value={profile} onChange={setProfile} />
+
           <h2 className="text-sm font-medium text-slate-300">粘贴赛事资讯</h2>
           <textarea
             value={text}
@@ -146,17 +183,22 @@ export default function App() {
             placeholder="把公众号推文、群聊记录或网页通知粘到这里…"
             className="min-h-0 flex-1 resize-none rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-sm leading-relaxed text-slate-200 outline-none focus:border-sky-600"
           />
+
           <div className="flex flex-wrap gap-2">
             {SAMPLES.map((sample) => (
               <button
                 key={sample.label}
-                onClick={() => setText(sample.text)}
+                onClick={() => {
+                  setText(sample.text)
+                  setSourceType(sample.sourceType)
+                }}
                 className="rounded-lg border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200"
               >
                 {sample.label}
               </button>
             ))}
           </div>
+
           <button
             onClick={analyze}
             disabled={running || !text.trim()}
@@ -164,6 +206,7 @@ export default function App() {
           >
             {running ? '分析中…' : '开始分析'}
           </button>
+
           {state.error && (
             <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
               {state.error}
