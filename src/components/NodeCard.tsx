@@ -172,13 +172,15 @@ export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }:
           )}
           <span
             className={`text-xs ${
-              status === 'running'
-                ? 'text-sky-300'
-                : status === 'done'
-                  ? 'text-emerald-400'
-                  : status === 'error'
-                    ? 'text-red-400'
-                    : 'text-slate-500'
+              skipped
+                ? 'text-slate-500'
+                : status === 'running'
+                  ? 'text-sky-300'
+                  : status === 'done'
+                    ? 'text-emerald-400'
+                    : status === 'error'
+                      ? 'text-red-400'
+                      : 'text-slate-500'
             }`}
           >
             {skipped ? '已跳过' : status === 'running' ? meta.runningText : statusText[status]}
