@@ -8,15 +8,15 @@ interface Props {
 }
 
 const VERDICT_STYLE: Record<string, { label: string; className: string }> = {
-  green: { label: '低风险', className: 'text-emerald-300' },
-  yellow: { label: '待核实', className: 'text-amber-300' },
-  red: { label: '高风险', className: 'text-red-300' },
+  green: { label: '低风险', className: 'text-emerald-200' },
+  yellow: { label: '待核实', className: 'text-amber-100' },
+  red: { label: '高风险', className: 'text-rose-200' },
 }
 
 const LEVEL_STYLE: Record<string, string> = {
-  high: 'border-red-500/40 text-red-300',
-  medium: 'border-amber-500/40 text-amber-300',
-  low: 'border-slate-600 text-slate-400',
+  high: 'border-rose-300/25 bg-rose-300/[0.05] text-rose-200',
+  medium: 'border-amber-200/25 bg-amber-200/[0.05] text-amber-100',
+  low: 'border-white/10 text-[#a4b8be]',
 }
 
 const DIMENSION_LABEL: Record<string, string> = {
@@ -28,8 +28,8 @@ const DIMENSION_LABEL: Record<string, string> = {
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <div className="rounded-lg border border-slate-800 p-2.5">
-      <p className="text-[11px] text-slate-500">{label}</p>
+    <div className="metric-card p-3">
+      <p className="text-[11px] text-[#8aa1aa]">{label}</p>
       <p className={`mt-0.5 text-sm font-medium ${tone ?? 'text-slate-200'}`}>{value}</p>
     </div>
   )
@@ -44,20 +44,32 @@ export function ReportPanel({ finished, payloads, sourceType }: Props) {
 
   if (!finished) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-slate-800 p-6 text-center">
-        <div className="flex items-center gap-3 text-slate-700">
-          <span className="text-xl">①</span>
-          <span className="h-px w-6 bg-slate-800" />
-          <span className="text-xl">②</span>
-          <span className="h-px w-6 bg-slate-800" />
-          <span className="text-xl">③</span>
-          <span className="h-px w-6 bg-slate-800" />
-          <span className="text-xl">④</span>
+      <div className="report-empty flex h-full min-h-[480px] flex-col items-center justify-center gap-4 p-6 text-center sm:p-8">
+        <div className="relative z-[1] grid h-32 w-32 place-items-center rounded-full border border-[#69dfc5]/15 bg-[#061720]/35">
+          <svg viewBox="0 0 120 120" className="h-28 w-28" fill="none" aria-hidden="true">
+            <circle cx="60" cy="60" r="48" stroke="#71cbbd" strokeOpacity=".23" strokeDasharray="2 6" />
+            <circle cx="60" cy="60" r="36" stroke="#71cbbd" strokeOpacity=".3" />
+            <circle cx="60" cy="60" r="22" stroke="#71cbbd" strokeOpacity=".22" strokeDasharray="2 5" />
+            <path d="M60 60 91 25a47 47 0 0 1 15 28Z" fill="#69dfc5" fillOpacity=".12" />
+            <path d="M60 12v96M12 60h96M26 26l68 68M94 26 26 94" stroke="#71cbbd" strokeOpacity=".16" />
+            <circle cx="60" cy="60" r="4" fill="#8ce7d4" />
+            <circle cx="91" cy="42" r="2.5" fill="#8ce7d4" fillOpacity=".8" />
+          </svg>
         </div>
-        <p className="text-sm text-slate-500">粘贴一段赛事资讯，点击「开始分析」</p>
-        <p className="max-w-[240px] text-xs leading-relaxed text-slate-600">
-          四个 Agent 会依次抽取信息、核查风险、评估匹配度、倒排备赛计划，最后在这里汇总成一份决策报告。
-        </p>
+        <div className="relative z-[1]">
+          <p className="panel-eyebrow">READY TO SCAN</p>
+          <h2 className="mt-2 text-lg font-semibold text-[#dce9eb]">你的决策报告将在这里呈现</h2>
+          <p className="mx-auto mt-2 max-w-[300px] text-xs leading-6 text-[#8199a2]">
+            选择一条赛事样例并开始分析，查看信息摘录、风险证据、个人匹配和备赛计划。
+          </p>
+        </div>
+        <div className="relative z-[1] flex flex-wrap items-center justify-center gap-2 text-[10px] text-[#8aa4ad]">
+          {['信息抽取', '风险核验', '个人匹配', '备赛规划'].map((step, index) => (
+            <span key={step} className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/10 px-2.5 py-1.5">
+              <span className="font-mono text-[#75d7c2]">0{index + 1}</span>{step}
+            </span>
+          ))}
+        </div>
       </div>
     )
   }
@@ -68,11 +80,11 @@ export function ReportPanel({ finished, payloads, sourceType }: Props) {
   const safeRegistrationUrl = /^https?:\/\//i.test(registrationUrl)
 
   return (
-    <div className="animate-fade-in-up h-full space-y-4 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+    <div className="decision-report animate-fade-in-up h-full space-y-4 overflow-y-auto rounded-[20px] p-4 sm:p-5">
       <div>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-widest text-slate-500">决策报告</p>
+            <p className="panel-eyebrow">03 / 决策报告</p>
             <h2 className="mt-1 text-base font-semibold leading-snug text-slate-100">
               {isEvent ? (event.name ?? '未识别出赛事') : '这段内容里没有识别出赛事'}
             </h2>
@@ -83,7 +95,7 @@ export function ReportPanel({ finished, payloads, sourceType }: Props) {
           <button
             type="button"
             onClick={() => downloadMarkdownReport(payloads, sourceType)}
-            className="shrink-0 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-sky-500/50 hover:text-sky-200"
+            className="shrink-0 rounded-xl border border-[#69dfc5]/20 bg-[#69dfc5]/[0.06] px-3 py-2 text-xs font-medium text-[#a5eadb] transition hover:border-[#69dfc5]/40 hover:bg-[#69dfc5]/[0.1]"
           >
             导出报告
           </button>
