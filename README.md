@@ -121,8 +121,9 @@ campusrace-radar/
 | [答辩问答准备](docs/defense-qa.md) | 12 个可能被追问的问题与回答思路 |
 | [演示视频脚本](docs/video-script.md) | 产品演示 + AI 协同过程的分镜表 |
 | [评测报告](eval/report.md) | 12 条用例的逐项结果与准确率 |
-| [技术设计说明](docs/technical-design.md) | 架构、Prompt 约束、规则、复现方式与局限 |
-| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 评审提交用技术文档，30 页以内 |
+| [技术设计说明](docs/technical-design.md) | 架构、意图控制、AI 代码约束、可复现性论证 |
+| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 评审提交用技术文档，14 页 |
+| [Prompt 链重建](docs/prompt-log/prompt-chain.md) | 三次核心迭代的交互过程（重建稿） |
 | [提交检查清单](docs/submission-checklist.md) | 按评审要求逐项确认代码与材料 |
 | [10 分钟复现指南](docs/reproduction.md) | Windows 环境安装、启动、演示与排错 |
 | [产品演示动图](docs/prompt-log/demo.gif) | 四节点依次点亮到决策报告 |
@@ -151,11 +152,11 @@ npm run eval:fault     # 故障注入：模型输出坏 JSON / 接口 500，验�
 |---|---|
 | 用例全通过率 | 100% |
 | 单项检查通过率 | 100% |
-| 单条延迟（中位） | 11.4s |
+| 单条延迟（中位） | 12.1s |
 
 > 说明：测试集为自建，覆盖 12 类场景，**不代表真实世界的准确率**。评测的价值在于把「模型可能怎么坏」变成可重复执行的检查。
 >
-> 以上数字来自仓库已有的评测报告。本轮修改风险规则后尚未重新生成报告，不能视为本轮代码的回归结果；提交前请按复现指南重新运行评测并更新报告。
+> 以上数字为当前代码重新运行的结果（`npm run eval`），与仓库中的 `eval/report.md` 一致。
 
 ## 开发进度
 
