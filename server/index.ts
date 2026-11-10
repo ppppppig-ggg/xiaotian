@@ -1,13 +1,16 @@
+import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { extract } from './agents/extractor.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787)
-const USE_MOCK = process.env.USE_MOCK === 'true'
+// 默认走 mock：演示和断网时不会意外消耗额度；只有显式 USE_MOCK=false 才调真模型
+const USE_MOCK = (process.env.USE_MOCK ?? 'true').toLowerCase() !== 'false'
 
 type NodeId = 'extractor' | 'fact_checker' | 'matchmaker' | 'planner'
 
@@ -18,21 +21,8 @@ interface SseEvent {
   message?: string
 }
 
-/** Day 1 阶段写死的四个节点 payload，接真模型后会被替换 */
-const PAYLOADS: Record<NodeId, unknown> = {
-  extractor: {
-    event: {
-      name: '传智杯全国大学生计算机应用能力大赛',
-      organizer: ['传智教育'],
-      level: '国家级',
-      registration: { deadline: '2026-11-20', url: 'https://www.itcast.cn/' },
-      submission: { deadline: '2026-12-15' },
-      tracks: [{ name: 'Vibe Coding', requirement: 'AI + Web 轻量应用' }],
-    },
-    confidence: 0.86,
-    missing_fields: [],
-    warnings: [],
-  },
+/** Day 3 之前的占位数据：风险核查 / 匹配评估 / 备赛规划还没接真模型 */
+const PLACEHOLDER: Record<Exclude<NodeId, 'extractor'>, unknown> = {
   fact_checker: {
     verdict: 'green',
     authority_score: 85,
@@ -73,39 +63,32 @@ const PAYLOADS: Record<NodeId, unknown> = {
   },
 }
 
-const NODE_ORDER: NodeId[] = ['extractor', 'fact_checker', 'matchmaker', 'planner']
-
-/** 在代码里生成与 data/mock-run.json 完全一致的事件序列 */
-function buildSequence(): Array<{ delay: number; event: SseEvent }> {
-  const seq: Array<{ delay: number; event: SseEvent }> = []
-  NODE_ORDER.forEach((node, index) => {
-    seq.push({ delay: index === 0 ? 0 : 900, event: { node, status: 'running' } })
-    seq.push({ delay: 900, event: { node, status: 'done', payload: PAYLOADS[node] } })
-  })
-  seq.push({ delay: 600, event: { node: 'all', status: 'done' } })
-  return seq
-}
-
 const MOCK_SEQUENCE: Array<{ delay: number; event: SseEvent }> = JSON.parse(
   readFileSync(resolve(__dirname, '../data/mock-run.json'), 'utf-8'),
 )
 
 const app = express()
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '2mb' }))
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, mode: USE_MOCK ? 'mock' : 'live', now: new Date().toISOString() })
+  res.json({
+    ok: true,
+    mode: USE_MOCK ? 'mock' : 'live',
+    model: process.env.LLM_MODEL ?? null,
+    now: new Date().toISOString(),
+  })
 })
 
-app.post('/api/analyze', (req, res) => {
+app.post('/api/analyze', async (req, res) => {
   const text = typeof req.body?.text === 'string' ? req.body.text.trim() : ''
   if (!text) {
     res.status(400).json({ error: '缺少 text 字段' })
     return
   }
 
-  // SSE 头：不缓存、不断开、禁用代理缓冲
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache',
@@ -114,41 +97,49 @@ app.post('/api/analyze', (req, res) => {
   })
   res.flushHeaders()
 
-  let closed = false
-  const timers = new Set<NodeJS.Timeout>()
-
+  let aborted = false
   const send = (event: SseEvent) => {
-    if (closed || res.writableEnded) return
+    if (aborted || res.writableEnded) return
     res.write(`data: ${JSON.stringify(event)}\n\n`)
   }
 
-  // 注意：这里必须监听 res 的 close，而不是 req 的 close。
-  // Node 16+ 在请求体读取完成后就会触发 req 的 close，
-  // 用它判断"客户端断开"会把正常请求误判为中断。
+  // 监听 res 而不是 req：Node 16+ 在请求体读完后就会触发 req 的 close
   res.on('close', () => {
-    closed = true
-    timers.forEach((t) => clearTimeout(t))
-    timers.clear()
+    aborted = true
   })
 
-  const sequence = USE_MOCK ? MOCK_SEQUENCE : buildSequence()
-  let elapsed = 0
-
   try {
-    for (const step of sequence) {
-      elapsed += step.delay
-      const timer = setTimeout(() => {
+    if (USE_MOCK) {
+      for (const step of MOCK_SEQUENCE) {
+        if (aborted) return
+        await sleep(step.delay)
         send(step.event)
-        if (step.event.node === 'all') {
-          closed = true
-          res.end()
-        }
-      }, elapsed)
-      timers.add(timer)
+      }
+      res.end()
+      return
     }
+
+    // 真模型链路：先接信息提取，其余节点仍用占位数据
+    send({ node: 'extractor', status: 'running' })
+    const extracted = await extract({
+      text,
+      sourceType: typeof req.body?.sourceType === 'string' ? req.body.sourceType : 'unknown',
+    })
+    send({ node: 'extractor', status: 'done', payload: extracted })
+
+    for (const node of ['fact_checker', 'matchmaker', 'planner'] as const) {
+      send({ node, status: 'running' })
+      await sleep(800)
+      send({ node, status: 'done', payload: PLACEHOLDER[node] })
+    }
+
+    send({ node: 'all', status: 'done' })
   } catch (error) {
-    send({ node: 'all', status: 'error', message: String(error) })
-    res.end()
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[analyze] 失败：', message)
+    send({ node: 'all', status: 'error', message })
+  } finally {
+    if (!res.writableEnded) res.end()
   }
 })
 
