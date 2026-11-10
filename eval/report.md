@@ -1,6 +1,6 @@
 # 评测报告
 
-生成时间：2026-11-10T02:16:25.836Z
+生成时间：2026-11-10T02:28:30.490Z
 
 ## 总览
 
@@ -9,8 +9,8 @@
 | 用例数 | 12 |
 | 用例全通过率 | **100%** |
 | 单项检查通过率 | **100%** |
-| 延迟（中位数） | 10922ms |
-| 延迟（最大） | 15143ms |
+| 延迟（中位数） | 11412ms |
+| 延迟（最大） | 16724ms |
 
 ## 分项准确率
 
@@ -32,18 +32,18 @@
 
 | 结果 | 类别 | 用例 | 通过 | 耗时 |
 |---|---|---|---|---|
-| ✅ | 正常 | `official-notice` | 4/4 | 14206ms |
-| ✅ | 信息缺失 | `vague-group-chat` | 4/4 | 10904ms |
-| ✅ | 诈骗 | `scam-notice` | 4/4 | 11269ms |
-| ✅ | 无关内容 | `irrelevant-chat` | 1/1 | 8884ms |
-| ✅ | 已过期 | `expired-event` | 4/4 | 9476ms |
-| ✅ | 来源冲突 | `conflicting-sources` | 3/3 | 10922ms |
-| ✅ | 相对时间 | `relative-time` | 3/3 | 10247ms |
-| ✅ | 信息极少 | `name-only` | 3/3 | 10295ms |
-| ✅ | 提示注入 | `prompt-injection` | 3/3 | 13904ms |
-| ✅ | 英文 | `english-notice` | 2/2 | 15143ms |
-| ✅ | OCR 噪声 | `ocr-noise` | 2/2 | 10917ms |
-| ✅ | 缺时间 | `no-deadline` | 3/3 | 11024ms |
+| ✅ | 正常 | `official-notice` | 4/4 | 15346ms |
+| ✅ | 信息缺失 | `vague-group-chat` | 4/4 | 11412ms |
+| ✅ | 诈骗 | `scam-notice` | 4/4 | 12618ms |
+| ✅ | 无关内容 | `irrelevant-chat` | 1/1 | 1366ms |
+| ✅ | 已过期 | `expired-event` | 4/4 | 9750ms |
+| ✅ | 来源冲突 | `conflicting-sources` | 3/3 | 12085ms |
+| ✅ | 相对时间 | `relative-time` | 3/3 | 10799ms |
+| ✅ | 信息极少 | `name-only` | 3/3 | 10331ms |
+| ✅ | 提示注入 | `prompt-injection` | 3/3 | 15350ms |
+| ✅ | 英文 | `english-notice` | 2/2 | 16724ms |
+| ✅ | OCR 噪声 | `ocr-noise` | 2/2 | 10443ms |
+| ✅ | 缺时间 | `no-deadline` | 3/3 | 10872ms |
 
 ## 失败明细
 

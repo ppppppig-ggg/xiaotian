@@ -84,6 +84,12 @@ app.post('/api/analyze', async (req, res) => {
     aborted = true
   })
 
+  // 四段链路跑满要十几秒，中间层（代理/浏览器）可能提前掐断空闲连接，
+  // 每 15 秒发一条 SSE 注释行保活；前端解析器会忽略没有 data: 的行
+  const heartbeat = setInterval(() => {
+    if (!aborted && !res.writableEnded) res.write(': keep-alive\n\n')
+  }, 15_000)
+
   try {
     if (USE_MOCK) {
       for (const step of MOCK_SEQUENCE) {
@@ -100,6 +106,15 @@ app.post('/api/analyze', async (req, res) => {
     const extraction = await extract({ text, sourceType })
     send({ node: 'extractor', status: 'done', payload: extraction })
     if (aborted) return
+
+    // 不是赛事内容：后面三个节点没有输入，直接跳过，省下三次模型调用
+    if (extraction?.is_event === false) {
+      for (const node of ['fact_checker', 'matchmaker', 'planner'] as const) {
+        send({ node, status: 'done', payload: { skipped: true, reason: '未识别出赛事信息' } })
+      }
+      send({ node: 'all', status: 'done' })
+      return
+    }
 
     // ② 风险核查（规则算分 + 模型解释）
     send({ node: 'fact_checker', status: 'running' })
@@ -133,6 +148,7 @@ app.post('/api/analyze', async (req, res) => {
     console.error('[analyze] 失败：', message)
     send({ node: 'all', status: 'error', message })
   } finally {
+    clearInterval(heartbeat)
     if (!res.writableEnded) res.end()
   }
 })

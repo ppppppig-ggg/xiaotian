@@ -45,6 +45,9 @@ function useElapsed(startedAt?: number, endedAt?: number) {
 
 function summary(meta: NodeMeta, payload: any) {
   if (!payload) return null
+  if (payload.skipped) {
+    return <p className="text-slate-600">{payload.reason ?? '已跳过'}</p>
+  }
 
   if (meta.id === 'extractor') {
     const name =
@@ -113,9 +116,11 @@ function summary(meta: NodeMeta, payload: any) {
 
 export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }: Props) {
   const elapsed = useElapsed(startedAt, endedAt)
+  const skipped = Boolean(payload?.skipped)
 
-  const border =
-    status === 'running'
+  const border = skipped
+    ? 'border-slate-800 opacity-60'
+    : status === 'running'
       ? 'border-sky-500/70 shadow-[0_0_24px_-6px] shadow-sky-500/40'
       : status === 'done'
         ? 'border-emerald-500/40'
@@ -133,16 +138,18 @@ export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }:
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
-              status === 'done'
-                ? 'bg-emerald-500/20 text-emerald-300'
-                : status === 'running'
-                  ? 'animate-pulse-ring bg-sky-500/20 text-sky-300'
-                  : status === 'error'
-                    ? 'bg-red-500/20 text-red-300'
-                    : 'bg-slate-800 text-slate-400'
+              skipped
+                ? 'bg-slate-800 text-slate-500'
+                : status === 'done'
+                  ? 'bg-emerald-500/20 text-emerald-300'
+                  : status === 'running'
+                    ? 'animate-pulse-ring bg-sky-500/20 text-sky-300'
+                    : status === 'error'
+                      ? 'bg-red-500/20 text-red-300'
+                      : 'bg-slate-800 text-slate-400'
             }`}
           >
-            {status === 'done' ? (
+            {skipped ? '–' : status === 'done' ? (
               '✓'
             ) : status === 'running' ? (
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-400/30 border-t-sky-300" />
@@ -174,7 +181,7 @@ export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }:
                     : 'text-slate-500'
             }`}
           >
-            {status === 'running' ? meta.runningText : statusText[status]}
+            {skipped ? '已跳过' : status === 'running' ? meta.runningText : statusText[status]}
           </span>
           {status === 'error' && (
             <button

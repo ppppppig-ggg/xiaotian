@@ -136,8 +136,9 @@ campusrace-radar/
 ## 评测
 
 ```bash
-npm run eval        # 批量跑 eval/cases.json，生成 eval/report.md
-npm run eval:fault  # 故障注入：模型输出坏 JSON / 接口 500，验证优雅失败
+npm run test:validate  # 单元测试：evidence 校验、置空路径、日期边界
+npm run eval           # 批量跑 eval/cases.json，生成 eval/report.md
+npm run eval:fault     # 故障注入：模型输出坏 JSON / 接口 500，验证优雅失败
 ```
 
 当前结果（12 条用例，含诈骗、过期、冲突、注入、OCR 噪声等对抗样本）：

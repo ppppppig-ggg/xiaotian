@@ -12,6 +12,9 @@ export interface ValidationResult {
 const DATE_MIN = new Date('2020-01-01T00:00:00Z').getTime()
 const DATE_MAX = new Date('2035-12-31T23:59:59Z').getTime()
 
+/** evidence 至少要有这么多字，否则「报名」「2026」这种碎片也能蒙混过关 */
+const MIN_EVIDENCE_LENGTH = 6
+
 /** 需要参与完整性统计的关键字段 */
 const KEY_FIELDS = [
   'event.name',
@@ -37,6 +40,18 @@ function setPath(obj: any, path: string, value: any): void {
   const last = keys.pop() as string
   const target = keys.reduce((acc, key) => (acc[key] ??= {}), obj)
   target[last] = value
+}
+
+/**
+ * 模型给的 evidence 键是「name」「registration.deadline」这种相对字段名，
+ * 而数据实际挂在 event 下面。必须先把路径解析对，否则置空会打在错误的位置上。
+ */
+function resolveFieldPath(data: any, field: string): string {
+  const candidates = [field, `event.${field}`]
+  for (const candidate of candidates) {
+    if (getPath(data, candidate) !== undefined) return candidate
+  }
+  return `event.${field}`
 }
 
 function isEmpty(value: any): boolean {
@@ -68,11 +83,34 @@ export function validateExtraction(raw: unknown, sourceText: string): Validation
   // 1. evidence 逐字校验：原文里找不到的字段一律判为编造
   const evidence: Record<string, string> = data.evidence ?? {}
   const haystack = normalize(sourceText)
+
   for (const [field, quote] of Object.entries(evidence)) {
     if (typeof quote !== 'string' || !quote.trim()) continue
-    if (!haystack.includes(normalize(quote))) {
+
+    const path = resolveFieldPath(data, field)
+    const normalizedQuote = normalize(quote)
+
+    // 1a. 摘录太短没有证明力
+    if (normalizedQuote.length < MIN_EVIDENCE_LENGTH) {
+      errors.push(`${field} 的 evidence 过短（少于 ${MIN_EVIDENCE_LENGTH} 字），已置为 null`)
+      setPath(data, path, null)
+      continue
+    }
+
+    // 1b. 原文里根本找不到这句
+    if (!haystack.includes(normalizedQuote)) {
       errors.push(`${field} 的 evidence 未在原文中命中，已置为 null`)
-      if (field.includes('.')) setPath(data, field, null)
+      setPath(data, path, null)
+      continue
+    }
+
+    // 1c. 日期字段：evidence 必须包含该日期本身，否则可能是从别处挪来的句子
+    const value = getPath(data, path)
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      if (!normalizedQuote.includes(value)) {
+        errors.push(`${field} 的 evidence 未包含日期值 ${value}，已置为 null`)
+        setPath(data, path, null)
+      }
     }
   }
 
