@@ -73,6 +73,11 @@ campusrace-radar/
 └─ docs/prompt-log/     # 开发过程对话截图（过程可复现材料）
 ```
 
+## 过程材料
+
+- [开发过程日志](docs/prompt-log/process-log.md)：按时间线记录需求、决策、踩坑与修复过程
+- [产品演示动图](docs/prompt-log/demo.gif)：四节点依次点亮到决策报告
+
 ## 开发进度
 
 - [x] Day 0 · 项目骨架与工具链
