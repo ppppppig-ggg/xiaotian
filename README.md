@@ -47,6 +47,35 @@ npm run dev
 
 `.env` 里 `USE_MOCK=true` 时使用本地假数据回放，不消耗任何 API 额度，断网也能完整演示。
 
+## 架构
+
+```mermaid
+flowchart LR
+  A[杂乱文本] --> B[① 信息提取]
+  B -->|结构化 JSON + evidence| C[② 风险核查]
+  C -->|verdict + 风险标签| D[③ 匹配评估]
+  D -->|fit_score + 建议| E[④ 备赛规划]
+  E --> F[决策报告]
+
+  subgraph 确定性层
+    C -.规则算分.-> C2[whitelist.json + risk.ts]
+    B -.逐字校验.-> B2[validate.ts]
+  end
+
+  subgraph 模型层
+    B
+    D
+    E
+  end
+
+  F --> G[SSE 逐节点推送]
+```
+
+两条设计原则：
+
+1. **判定归规则，解释归模型**——风险分数由 `server/rules/risk.ts` 算出，同样输入永远同样结果；模型只负责把结论翻译成可执行动作。
+2. **模型输出必须过校验**——`evidence` 在原文里找不到的字段一律置 null，宁可留空也不编。
+
 ## 技术栈
 
 | 层 | 选型 | 说明 |
@@ -61,23 +90,48 @@ npm run dev
 ```
 campusrace-radar/
 ├─ server/
-│  ├─ index.ts          # Express + SSE 入口
+│  ├─ index.ts          # Express + SSE 入口，四节点串行编排
 │  ├─ agents/           # 四个 Agent 各一个文件
-│  ├─ llm.ts            # provider 无关的模型调用层
-│  └─ validate.ts       # evidence 校验、日期校验
+│  ├─ prompts/          # 四个 System Prompt（与文档版本一致）
+│  ├─ rules/risk.ts     # 确定性风险规则（白名单 + 7 类信号）
+│  ├─ llm.ts            # provider 无关的模型调用层（超时/重试/故障注入）
+│  └─ validate.ts       # evidence 逐字校验、日期校验、冲突校验
 ├─ src/
-│  ├─ components/       # 看板、节点卡片、报告区
-│  └─ lib/sse.ts        # SSE 流解析（纯函数，可单测）
-├─ data/whitelist.json  # 官方赛事白名单
-├─ eval/cases.json      # 评测用例
-└─ docs/prompt-log/     # 开发过程对话截图（过程可复现材料）
+│  ├─ components/       # 节点卡片、报告区、画像表单
+│  ├─ lib/sse.ts        # SSE 流解析（纯函数）
+│  └─ lib/profile.ts    # 画像类型与解析
+├─ data/
+│  ├─ whitelist.json    # 官方赛事白名单（可扩展）
+│  └─ mock-run.json     # 演示回放数据
+├─ eval/
+│  ├─ cases.json        # 12 条评测用例
+│  ├─ run.mjs           # 批量评测
+│  ├─ fault.mjs         # 故障注入
+│  └─ report.md         # 评测报告（生成物，已提交作证据）
+└─ docs/
+   ├─ defense-qa.md     # 答辩问答
+   ├─ video-script.md   # 视频分镜
+   └─ prompt-log/       # 过程材料（截图/录屏/日志）
 ```
+
+## 文档索引
+
+| 文档 | 说明 |
+|---|---|
+| [开发过程日志](docs/prompt-log/process-log.md) | 按时间线记录需求、决策、踩坑与修复 |
+| [答辩问答准备](docs/defense-qa.md) | 12 个可能被追问的问题与回答思路 |
+| [演示视频脚本](docs/video-script.md) | 产品演示 + AI 协同过程的分镜表 |
+| [评测报告](eval/report.md) | 12 条用例的逐项结果与准确率 |
+| [产品演示动图](docs/prompt-log/demo.gif) | 四节点依次点亮到决策报告 |
 
 ## 过程材料
 
-- [开发过程日志](docs/prompt-log/process-log.md)：按时间线记录需求、决策、踩坑与修复过程
-- [产品演示动图](docs/prompt-log/demo.gif)：四节点依次点亮到决策报告
-- [评测报告](eval/report.md)：12 条用例的逐项结果与准确率
+`docs/prompt-log/` 目录存放参赛证据材料：
+
+- `demo.gif` —— 产品演示动图（已提供）
+- `video-a-product.mp4` —— 产品演示视频
+- `video-b-ai-process.mp4` —— AI 协同过程录屏（过程可复现的硬性材料）
+- `screenshot-*.png` —— 关键节点截图
 
 ## 评测
 
@@ -104,7 +158,7 @@ npm run eval:fault  # 故障注入：模型输出坏 JSON / 接口 500，验证�
 - [x] Day 3 · 风险核查 / 匹配评估 / 备赛规划
 - [x] Day 4 · 状态机与风险视觉
 - [x] Day 5 · 评测与故障注入
-- [ ] Day 6 · 文档与演示视频
+- [x] Day 6 · 文档与演示视频
 
 ## 开发约定
 
