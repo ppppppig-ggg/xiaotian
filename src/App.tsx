@@ -2,8 +2,8 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { NodeCard } from './components/NodeCard'
 import { ProfileForm } from './components/ProfileForm'
 import { ReportPanel } from './components/ReportPanel'
-import { createSseParser } from './lib/sse'
 import { EMPTY_PROFILE, PROFILE_STORAGE_KEY, parseSkills, type ProfileFormValue } from './lib/profile'
+import { createSseParser } from './lib/sse'
 import { NODES, type NodeId, type NodeStatus, type SseEvent } from './types'
 
 const EMPTY_STATUS: Record<NodeId, NodeStatus> = {
@@ -13,11 +13,15 @@ const EMPTY_STATUS: Record<NodeId, NodeStatus> = {
   planner: 'idle',
 }
 
-const PROFILE_KEY = PROFILE_STORAGE_KEY
+interface Timing {
+  start: number
+  end?: number
+}
 
 interface State {
   statuses: Record<NodeId, NodeStatus>
   payloads: Partial<Record<NodeId, any>>
+  timings: Partial<Record<NodeId, Timing>>
   finished: boolean
   error: string | null
 }
@@ -30,7 +34,13 @@ type Action =
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'reset':
-      return { statuses: { ...EMPTY_STATUS }, payloads: {}, finished: false, error: null }
+      return {
+        statuses: { ...EMPTY_STATUS },
+        payloads: {},
+        timings: {},
+        finished: false,
+        error: null,
+      }
 
     case 'event': {
       const event = action.event
@@ -41,9 +51,18 @@ function reducer(state: State, action: Action): State {
           finished: true,
         }
       }
+
+      const timings = { ...state.timings }
+      if (event.status === 'running') {
+        timings[event.node] = { start: Date.now() }
+      } else if (timings[event.node]) {
+        timings[event.node] = { ...timings[event.node]!, end: Date.now() }
+      }
+
       return {
         ...state,
         statuses: { ...state.statuses, [event.node]: event.status },
+        timings,
         payloads: event.payload
           ? { ...state.payloads, [event.node]: event.payload }
           : state.payloads,
@@ -52,10 +71,14 @@ function reducer(state: State, action: Action): State {
 
     case 'fail': {
       const statuses = { ...state.statuses }
+      const timings = { ...state.timings }
       for (const key of Object.keys(statuses) as NodeId[]) {
-        if (statuses[key] === 'running') statuses[key] = 'error'
+        if (statuses[key] === 'running') {
+          statuses[key] = 'error'
+          if (timings[key]) timings[key] = { ...timings[key]!, end: Date.now() }
+        }
       }
-      return { ...state, statuses, error: action.message, finished: true }
+      return { ...state, statuses, timings, error: action.message, finished: true }
     }
   }
 }
@@ -86,9 +109,10 @@ const SAMPLES: Array<{ label: string; text: string; sourceType: string }> = [
 export default function App() {
   const [text, setText] = useState('')
   const [sourceType, setSourceType] = useState('wechat')
+  const [mode, setMode] = useState<'mock' | 'live' | null>(null)
   const [profile, setProfile] = useState<ProfileFormValue>(() => {
     try {
-      const raw = localStorage.getItem(PROFILE_KEY)
+      const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
       if (raw) return { ...EMPTY_PROFILE, ...JSON.parse(raw) }
     } catch {
       // 忽略损坏的本地数据
@@ -99,16 +123,25 @@ export default function App() {
   const [state, dispatch] = useReducer(reducer, {
     statuses: { ...EMPTY_STATUS },
     payloads: {},
+    timings: {},
     finished: false,
     error: null,
   })
 
   const abortRef = useRef<AbortController | null>(null)
   const running = Object.values(state.statuses).some((s) => s === 'running')
+  const doneCount = Object.values(state.statuses).filter((s) => s === 'done').length
 
   useEffect(() => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile))
   }, [profile])
+
+  useEffect(() => {
+    fetch('/api/health')
+      .then((res) => res.json())
+      .then((data) => setMode(data?.mode ?? null))
+      .catch(() => setMode(null))
+  }, [])
 
   // 组件卸载时中断流，避免内存泄漏
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -160,28 +193,50 @@ export default function App() {
   }, [text, sourceType, profile])
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-slate-950 text-slate-100">
-      <header className="flex items-center justify-between border-b border-slate-800 px-6 py-3">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100 lg:h-screen lg:overflow-hidden">
+      <header className="flex items-center justify-between border-b border-slate-800 px-4 py-3 lg:px-6">
         <div className="flex items-baseline gap-3">
           <h1 className="text-base font-semibold tracking-wide">赛博赛事雷达</h1>
-          <span className="text-xs text-slate-500">CampusRace Radar</span>
+          <span className="hidden text-xs text-slate-500 sm:inline">CampusRace Radar</span>
         </div>
-        <span className="rounded-full border border-slate-800 px-2 py-0.5 text-xs text-slate-500">
-          多 Agent 赛事解析
-        </span>
+
+        <div className="flex items-center gap-2">
+          {mode && (
+            <span
+              className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] ${
+                mode === 'live'
+                  ? 'border-emerald-500/30 text-emerald-300'
+                  : 'border-slate-700 text-slate-400'
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  mode === 'live' ? 'bg-emerald-400' : 'bg-slate-500'
+                }`}
+              />
+              {mode === 'live' ? '实时模型' : '演示数据'}
+            </span>
+          )}
+          <span className="hidden rounded-full border border-slate-800 px-2 py-0.5 text-[11px] text-slate-500 sm:inline">
+            多 Agent 赛事解析
+          </span>
+        </div>
       </header>
 
-      <main className="grid flex-1 grid-cols-[340px_minmax(0,1fr)_420px] gap-4 overflow-hidden p-4">
+      <main className="grid flex-1 gap-4 p-4 lg:grid-cols-[320px_minmax(0,1fr)_400px] lg:overflow-hidden">
         {/* 左：画像 + 输入 */}
-        <section className="flex flex-col gap-3 overflow-hidden">
+        <section className="flex flex-col gap-3 lg:min-h-0 lg:overflow-hidden">
           <ProfileForm value={profile} onChange={setProfile} />
 
           <h2 className="text-sm font-medium text-slate-300">粘贴赛事资讯</h2>
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="把公众号推文、群聊记录或网页通知粘到这里…"
-            className="min-h-0 flex-1 resize-none rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-sm leading-relaxed text-slate-200 outline-none focus:border-sky-600"
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') analyze()
+            }}
+            placeholder="把公众号推文、群聊记录或网页通知粘到这里…（Ctrl + Enter 开始分析）"
+            className="h-48 resize-none rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-sm leading-relaxed text-slate-200 outline-none transition focus:border-sky-600 lg:h-auto lg:min-h-0 lg:flex-1"
           />
 
           <div className="flex flex-wrap gap-2">
@@ -192,7 +247,7 @@ export default function App() {
                   setText(sample.text)
                   setSourceType(sample.sourceType)
                 }}
-                className="rounded-lg border border-slate-800 px-2.5 py-1 text-xs text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                className="rounded-lg border border-slate-800 px-2.5 py-1 text-xs text-slate-400 transition hover:border-slate-700 hover:text-slate-200"
               >
                 {sample.label}
               </button>
@@ -204,25 +259,48 @@ export default function App() {
             disabled={running || !text.trim()}
             className="rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-sky-500 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
           >
-            {running ? '分析中…' : '开始分析'}
+            {running ? `分析中… ${doneCount}/4` : '开始分析'}
           </button>
 
           {state.error && (
-            <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+            <p className="animate-fade-in-up rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
               {state.error}
             </p>
           )}
         </section>
 
         {/* 中：工作流 */}
-        <section className="flex flex-col items-stretch overflow-y-auto pr-1">
-          <h2 className="mb-3 text-sm font-medium text-slate-300">处理流程</h2>
+        <section className="flex flex-col lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-medium text-slate-300">处理流程</h2>
+            <span className="text-[11px] text-slate-600">
+              {doneCount}/{NODES.length} 完成
+            </span>
+          </div>
+
+          <div className="mb-3 flex gap-1">
+            {NODES.map((meta) => (
+              <div
+                key={meta.id}
+                className={`h-0.5 flex-1 rounded-full transition-colors duration-500 ${
+                  state.statuses[meta.id] === 'done'
+                    ? 'bg-emerald-500/70'
+                    : state.statuses[meta.id] === 'running'
+                      ? 'bg-sky-500/70'
+                      : 'bg-slate-800'
+                }`}
+              />
+            ))}
+          </div>
+
           {NODES.map((meta, index) => (
             <div key={meta.id}>
               <NodeCard
                 meta={meta}
                 status={state.statuses[meta.id]}
                 payload={state.payloads[meta.id]}
+                startedAt={state.timings[meta.id]?.start}
+                endedAt={state.timings[meta.id]?.end}
                 onRetry={analyze}
               />
               {index < NODES.length - 1 && (
@@ -235,7 +313,7 @@ export default function App() {
         </section>
 
         {/* 右：报告 */}
-        <section className="overflow-hidden">
+        <section className="min-h-[420px] lg:min-h-0 lg:overflow-hidden">
           <ReportPanel
             finished={state.finished && !state.error}
             payloads={state.payloads as Record<NodeId, any>}

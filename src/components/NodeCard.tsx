@@ -1,9 +1,12 @@
+import { useEffect, useState } from 'react'
 import type { NodeMeta, NodeStatus } from '../types'
 
 interface Props {
   meta: NodeMeta
   status: NodeStatus
   payload: any
+  startedAt?: number
+  endedAt?: number
   onRetry: () => void
 }
 
@@ -26,7 +29,20 @@ const VERDICT_LABEL: Record<string, string> = {
   red: '高风险',
 }
 
-/** 每种节点的结果摘要，保持简短，一眼能看懂 */
+/** 节点耗时：运行中每秒刷新，完成后固定 */
+function useElapsed(startedAt?: number, endedAt?: number) {
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!startedAt || endedAt) return
+    const timer = setInterval(() => setNow(Date.now()), 100)
+    return () => clearInterval(timer)
+  }, [startedAt, endedAt])
+
+  if (!startedAt) return null
+  return ((endedAt ?? now) - startedAt) / 1000
+}
+
 function summary(meta: NodeMeta, payload: any) {
   if (!payload) return null
 
@@ -95,7 +111,9 @@ function summary(meta: NodeMeta, payload: any) {
   )
 }
 
-export function NodeCard({ meta, status, payload, onRetry }: Props) {
+export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }: Props) {
+  const elapsed = useElapsed(startedAt, endedAt)
+
   const border =
     status === 'running'
       ? 'border-sky-500/70 shadow-[0_0_24px_-6px] shadow-sky-500/40'
@@ -106,26 +124,45 @@ export function NodeCard({ meta, status, payload, onRetry }: Props) {
           : 'border-slate-800'
 
   return (
-    <div className={`rounded-xl border bg-slate-900/60 p-4 transition-all duration-300 ${border}`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div
+      className={`rounded-xl border bg-slate-900/60 p-4 transition-all duration-300 ${border} ${
+        status === 'done' ? 'animate-fade-in-up' : ''
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
           <span
-            className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs ${
               status === 'done'
                 ? 'bg-emerald-500/20 text-emerald-300'
                 : status === 'running'
-                  ? 'bg-sky-500/20 text-sky-300'
+                  ? 'animate-pulse-ring bg-sky-500/20 text-sky-300'
                   : status === 'error'
                     ? 'bg-red-500/20 text-red-300'
                     : 'bg-slate-800 text-slate-400'
             }`}
           >
-            {status === 'done' ? '✓' : status === 'error' ? '!' : meta.index}
+            {status === 'done' ? (
+              '✓'
+            ) : status === 'running' ? (
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-sky-400/30 border-t-sky-300" />
+            ) : status === 'error' ? (
+              '!'
+            ) : (
+              meta.index
+            )}
           </span>
-          <h3 className="text-sm font-medium text-slate-200">{meta.title}</h3>
+
+          <div className="min-w-0">
+            <h3 className="truncate text-sm font-medium text-slate-200">{meta.title}</h3>
+            <p className="truncate text-[11px] text-slate-600">{meta.subtitle}</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {elapsed !== null && (
+            <span className="font-mono text-[11px] text-slate-500">{elapsed.toFixed(1)}s</span>
+          )}
           <span
             className={`text-xs ${
               status === 'running'
@@ -150,7 +187,16 @@ export function NodeCard({ meta, status, payload, onRetry }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 min-h-[2.5rem] text-sm">{summary(meta, payload)}</div>
+      <div className="mt-3 min-h-[2.5rem] text-sm">
+        {status === 'running' && !payload ? (
+          <div className="space-y-2">
+            <div className="animate-shimmer h-3 w-2/3 rounded" />
+            <div className="animate-shimmer h-3 w-1/3 rounded" />
+          </div>
+        ) : (
+          summary(meta, payload)
+        )}
+      </div>
     </div>
   )
 }

@@ -41,8 +41,20 @@ export function ReportPanel({ finished, payloads }: Props) {
 
   if (!finished) {
     return (
-      <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-slate-800 p-6 text-center text-sm text-slate-500">
-        粘贴一段赛事资讯，点击「开始分析」
+      <div className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border border-dashed border-slate-800 p-6 text-center">
+        <div className="flex items-center gap-3 text-slate-700">
+          <span className="text-xl">①</span>
+          <span className="h-px w-6 bg-slate-800" />
+          <span className="text-xl">②</span>
+          <span className="h-px w-6 bg-slate-800" />
+          <span className="text-xl">③</span>
+          <span className="h-px w-6 bg-slate-800" />
+          <span className="text-xl">④</span>
+        </div>
+        <p className="text-sm text-slate-500">粘贴一段赛事资讯，点击「开始分析」</p>
+        <p className="max-w-[240px] text-xs leading-relaxed text-slate-600">
+          四个 Agent 会依次抽取信息、核查风险、评估匹配度、倒排备赛计划，最后在这里汇总成一份决策报告。
+        </p>
       </div>
     )
   }
@@ -51,12 +63,15 @@ export function ReportPanel({ finished, payloads }: Props) {
   const verdict = checker ? (VERDICT_STYLE[checker.verdict] ?? VERDICT_STYLE.yellow) : null
 
   return (
-    <div className="h-full space-y-4 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/40 p-4">
+    <div className="animate-fade-in-up h-full space-y-4 overflow-y-auto rounded-xl border border-slate-800 bg-slate-900/40 p-4">
       <div>
         <p className="text-[11px] uppercase tracking-widest text-slate-500">决策报告</p>
         <h2 className="mt-1 text-base font-semibold leading-snug text-slate-100">
           {isEvent ? (extractor?.event?.name ?? '未识别出赛事') : '这段内容里没有识别出赛事'}
         </h2>
+        {isEvent && checker?.verdict_reason && (
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{checker.verdict_reason}</p>
+        )}
       </div>
 
       {!isEvent ? (
