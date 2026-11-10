@@ -362,7 +362,7 @@ export default function App() {
                 maxLength={MAX_TEXT_CHARS}
                 aria-label="赛事资讯原文"
                 aria-describedby="event-text-help"
-                placeholder="将赛事通知粘贴到这里…\n\n例如：主办方、报名截止、比赛要求、报名链接等。"
+                placeholder={'将赛事通知粘贴到这里…\n\n例如：主办方、报名截止、比赛要求、报名链接等。'}
                 className="field-control min-h-[210px] w-full resize-y px-3.5 py-3.5 text-[13px] leading-6 sm:min-h-[230px]"
               />
               <span className="pointer-events-none absolute bottom-3 right-3 rounded-md bg-[#06131b]/80 px-2 py-1 font-mono text-[10px] text-[#68818b]">

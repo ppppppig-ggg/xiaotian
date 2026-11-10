@@ -18,9 +18,9 @@ const statusText: Record<NodeStatus, string> = {
 }
 
 const VERDICT_STYLE: Record<string, string> = {
-  green: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  yellow: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-  red: 'bg-red-500/15 text-red-300 border-red-500/30',
+  green: 'bg-emerald-400/[0.09] text-emerald-200 border-emerald-300/20',
+  yellow: 'bg-amber-300/[0.09] text-amber-100 border-amber-200/20',
+  red: 'bg-rose-400/[0.09] text-rose-200 border-rose-300/20',
 }
 
 const VERDICT_LABEL: Record<string, string> = {
