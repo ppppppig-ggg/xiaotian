@@ -39,7 +39,7 @@
 
 - [ ] 提交一条 5–8 分钟、1920×1080 的 MP4 演示视频。
 - [ ] 视频至少 2 分钟展示真实 AI 协同过程，包括 Prompt、AI 输出、人工反馈和代码落地/复核。
-- [x] 提交 `output/pdf/campusrace-technical-design.pdf`；当前 14 页，未超过 30 页。
+- [x] 提交 `output/pdf/campusrace-technical-design.pdf`；当前 18 页，未超过 30 页。
 - [x] 技术文档已覆盖意图控制策略（第 4 章）、架构设计与 AI 代码约束（第 5 章）、可复现性论证（第 9 章）。
 
 ## 上传前最后检查

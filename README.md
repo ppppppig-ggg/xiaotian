@@ -1,4 +1,4 @@
-# 赛博赛事雷达 · CampusRace Radar
+# 校园赛事雷达 · CampusRace Radar
 
 > 一个面向大学生的赛事情报解析工具：把杂乱的群聊、公众号推文、网页通知，变成一份「能不能信、适不适合我、该怎么准备」的决策报告。
 
@@ -122,7 +122,7 @@ campusrace-radar/
 | [演示视频脚本](docs/video-script.md) | 产品演示 + AI 协同过程的分镜表 |
 | [评测报告](eval/report.md) | 12 条用例的逐项结果与准确率 |
 | [技术设计说明](docs/technical-design.md) | 架构、意图控制、AI 代码约束、可复现性论证 |
-| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 评审提交用技术文档，14 页 |
+| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 评审提交用技术文档，18 页（`node scripts/md2pdf.mjs docs/technical-design.md output/pdf/campusrace-technical-design.pdf` 重新生成） |
 | [Prompt 链重建](docs/prompt-log/prompt-chain.md) | 三次核心迭代的交互过程（重建稿） |
 | [提交检查清单](docs/submission-checklist.md) | 按评审要求逐项确认代码与材料 |
 | [10 分钟复现指南](docs/reproduction.md) | Windows 环境安装、启动、演示与排错 |
