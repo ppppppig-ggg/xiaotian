@@ -14,6 +14,7 @@
     "lint": "oxlint",
     "eval": "node eval/run.mjs",
     "eval:fault": "node eval/fault.mjs",
+    "eval:prompt": "node eval/prompt-ab.mjs",
     "test:validate": "tsx eval/validate.test.ts",
     "preview": "vite preview"
   },
