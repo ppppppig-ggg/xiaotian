@@ -85,7 +85,8 @@ a:focus-visible {
 
 .app-shell::after {
   background: url("/campus-radar.svg") no-repeat right 5% top 3rem / min(100%, 1360px) auto;
-  opacity: 0.66;
+  opacity: 0.72;
+  animation: map-pulse 11s ease-in-out infinite;
   mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.72) 42%, transparent 88%);
 }
 
@@ -133,6 +134,7 @@ a:focus-visible {
   box-shadow: 0 0 0 2.4rem rgba(105, 223, 197, 0.018), 0 0 0 5.4rem rgba(105, 223, 197, 0.014);
   content: "";
   pointer-events: none;
+  animation: orbit-breathe 9s ease-in-out infinite;
 }
 
 .panel-surface {
@@ -309,10 +311,52 @@ a:focus-visible {
   pointer-events: none;
 }
 
+.decision-report {
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, rgba(13, 31, 41, 0.92), rgba(7, 21, 29, 0.9));
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.15), inset 0 1px rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(16px);
+}
+
+.decision-report .text-slate-100 { color: #eaf2f4; }
+.decision-report .text-slate-200 { color: #dce8eb; }
+.decision-report .text-slate-300 { color: #c1d0d4; }
+.decision-report .text-slate-400 { color: #9db2ba; }
+.decision-report .text-slate-500 { color: #829aa3; }
+.decision-report .text-slate-600 { color: #718992; }
+.decision-report .text-sky-300 { color: #8bd3f0; }
+.decision-report .border-slate-800 { border-color: rgba(143, 184, 193, 0.14); }
+.decision-report [class~="bg-slate-950/30"],
+.decision-report [class~="bg-slate-950/40"] { background-color: rgba(3, 15, 22, 0.38); }
+.decision-report .bg-slate-800 { background-color: rgba(74, 104, 113, 0.32); }
+
 .metric-card {
   border: 1px solid rgba(143, 184, 193, 0.15);
   border-radius: 13px;
   background: linear-gradient(145deg, rgba(15, 34, 44, 0.78), rgba(8, 23, 31, 0.7));
+}
+
+@keyframes map-pulse {
+  0%, 100% { opacity: 0.59; }
+  50% { opacity: 0.76; }
+}
+
+@keyframes orbit-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(0.98); }
+  50% { opacity: 0.9; transform: scale(1.02); }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .panel-surface,
+  .decision-report {
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .panel-surface:hover,
+  .decision-report:hover {
+    border-color: rgba(143, 184, 193, 0.24);
+    box-shadow: 0 20px 54px rgba(0, 0, 0, 0.19), inset 0 1px rgba(255, 255, 255, 0.045);
+  }
 }
 
 * {
