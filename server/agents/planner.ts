@@ -1,6 +1,6 @@
-import { callJSON } from '../llm'
-import { PLANNER_SYSTEM_PROMPT } from '../prompts/planner'
-import type { Profile } from './matchmaker'
+import { callJSON } from '../llm.js'
+import { PLANNER_SYSTEM_PROMPT } from '../prompts/planner.js'
+import type { Profile } from './matchmaker.js'
 
 /** 距截止还剩多少周（向上取整），已过期为负数 */
 function weeksUntil(deadline: string | null | undefined): number | null {

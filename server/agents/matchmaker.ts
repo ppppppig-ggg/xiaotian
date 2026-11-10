@@ -1,5 +1,5 @@
-import { callJSON } from '../llm'
-import { MATCHMAKER_SYSTEM_PROMPT } from '../prompts/matchmaker'
+import { callJSON } from '../llm.js'
+import { MATCHMAKER_SYSTEM_PROMPT } from '../prompts/matchmaker.js'
 
 export interface Profile {
   major?: string

@@ -1,6 +1,6 @@
-import { callJSON } from '../llm'
-import { EXTRACTOR_SYSTEM_PROMPT } from '../prompts/extractor'
-import { validateExtraction } from '../validate'
+import { callJSON } from '../llm.js'
+import { EXTRACTOR_SYSTEM_PROMPT } from '../prompts/extractor.js'
+import { validateExtraction } from '../validate.js'
 
 export interface ExtractInput {
   text: string

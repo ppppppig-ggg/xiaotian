@@ -1,0 +1,218 @@
+{
+  "vague_group_chat": [
+    { "delay": 350, "event": { "node": "extractor", "status": "running" } },
+    {
+      "delay": 650,
+      "event": {
+        "node": "extractor",
+        "status": "done",
+        "payload": {
+          "is_event": true,
+          "event": {
+            "name": "传智杯",
+            "aliases": [],
+            "organizer": [],
+            "level": "unknown",
+            "tracks": [],
+            "registration": { "deadline": null, "url": null, "fee": null, "channel": null, "raw_time_text": "下周三截止" },
+            "submission": { "deadline": null, "method": null, "raw_time_text": null },
+            "eligibility": null,
+            "prizes": null,
+            "contact": null
+          },
+          "evidence": { "name": "那个传智杯", "registration.raw_time_text": "下周三截止" },
+          "missing_fields": ["registration.deadline", "registration.url", "organizer"],
+          "warnings": ["relative_time_unresolved", "请以官方通知核对报名日期"],
+          "injection_detected": false,
+          "confidence": 0.42,
+          "disclaimer": "演示样例：信息不完整，需人工核验。"
+        }
+      }
+    },
+    { "delay": 350, "event": { "node": "fact_checker", "status": "running" } },
+    {
+      "delay": 500,
+      "event": {
+        "node": "fact_checker",
+        "status": "done",
+        "payload": {
+          "verdict": "yellow",
+          "authority_score": 35,
+          "risk_flags": [
+            { "code": "unofficial_channel", "level": "medium", "message": "来源为群聊/社交平台，非官方发布渠道，信息可能失真" },
+            { "code": "no_official_url", "level": "medium", "message": "缺少官方报名地址，无法核对主办方" },
+            { "code": "no_deadline", "level": "low", "message": "未找到明确的报名截止时间", "evidence": "下周三截止" }
+          ],
+          "known_facts": [],
+          "matched_event_id": null,
+          "verify_steps": [
+            { "action": "查看传智杯本届官方通知", "where": "赛事官网或官方公众号", "pass_criteria": "公告中能核对报名截止日期与报名入口" },
+            { "action": "确认年级、赛道和作品要求", "where": "赛事规则页", "pass_criteria": "规则与本人参赛条件相符" }
+          ],
+          "verdict_reason": "群聊只给出相对时间，缺少可核对的官方入口。",
+          "disclaimer": "演示样例：请以赛事主办方的正式通知为准。"
+        }
+      }
+    },
+    { "delay": 350, "event": { "node": "matchmaker", "status": "running" } },
+    {
+      "delay": 450,
+      "event": {
+        "node": "matchmaker",
+        "status": "done",
+        "payload": {
+          "fit_score": 50,
+          "recommendation": "可试",
+          "breakdown": {
+            "skill_fit": { "score": 50, "reason": "赛道要求没有出现在这条消息中。" },
+            "time_fit": { "score": 40, "reason": "“下周三”缺少发布时间，无法换算成日期。" },
+            "goal_value": { "score": 55, "reason": "赛事目标与奖项信息未提供。" },
+            "access_fit": { "score": 50, "reason": "参赛年级和专业门槛未知。" }
+          },
+          "hard_blockers": [],
+          "next_actions": ["先找到官方通知", "确认报名截止日期", "核对参赛资格"],
+          "summary": "当前信息不足，先核实再决定是否投入准备时间。"
+        }
+      }
+    },
+    { "delay": 350, "event": { "node": "planner", "status": "running" } },
+    {
+      "delay": 350,
+      "event": {
+        "node": "planner",
+        "status": "done",
+        "payload": {
+          "feasible": false,
+          "total_weeks": 0,
+          "buffered_weeks": 0,
+          "phases": [],
+          "milestones": [],
+          "risk_note": "缺少明确截止日期，暂不能倒排计划。",
+          "summary": "补齐官方时间线后再生成备赛计划。",
+          "weeks_left": null
+        }
+      }
+    },
+    { "delay": 150, "event": { "node": "all", "status": "done" } }
+  ],
+  "scam_notice": [
+    { "delay": 350, "event": { "node": "extractor", "status": "running" } },
+    {
+      "delay": 550,
+      "event": {
+        "node": "extractor",
+        "status": "done",
+        "payload": {
+          "is_event": true,
+          "event": {
+            "name": "全国青年创新大赛",
+            "aliases": [],
+            "organizer": [],
+            "level": "unknown",
+            "tracks": [],
+            "registration": { "deadline": null, "url": null, "fee": "交钱即可拿证", "channel": "加微信咨询", "raw_time_text": null },
+            "submission": { "deadline": null, "method": null, "raw_time_text": null },
+            "eligibility": null,
+            "prizes": "保过保就业",
+            "contact": "138xxxx8888"
+          },
+          "evidence": { "registration.fee": "交钱即可拿证", "prizes": "保过保就业", "contact": "加微信 138xxxx8888 咨询" },
+          "missing_fields": ["organizer", "registration.url", "registration.deadline"],
+          "warnings": ["承诺保过、交钱拿证属于高风险信号"],
+          "injection_detected": false,
+          "confidence": 0.78,
+          "disclaimer": "演示样例：请勿仅凭此报告作出缴费决定。"
+        }
+      }
+    },
+    { "delay": 350, "event": { "node": "fact_checker", "status": "running" } },
+    {
+      "delay": 450,
+      "event": {
+        "node": "fact_checker",
+        "status": "done",
+        "payload": {
+          "verdict": "red",
+          "authority_score": 0,
+          "risk_flags": [
+            { "code": "scam_keyword", "level": "high", "message": "出现“交钱即可”“保过”等高风险承诺，需高度警惕" },
+            { "code": "no_official_url", "level": "medium", "message": "没有可核对的赛事官网或报名入口" },
+            { "code": "no_organizer", "level": "medium", "message": "未提供具名主办方" }
+          ],
+          "known_facts": [],
+          "matched_event_id": null,
+          "verify_steps": [
+            { "action": "先核实主办方和赛事资质", "where": "主办方官网及学校竞赛负责人", "pass_criteria": "能找到正式公告，且公告主体与通知一致" },
+            { "action": "不要向个人账号转账", "where": "通知中的缴费链接或联系人", "pass_criteria": "官方渠道明确说明收费规则；无法核实时不付款" }
+          ],
+          "verdict_reason": "出现付费保过等高风险承诺，建议停止缴费并先核验主办方。",
+          "disclaimer": "演示样例：风险提示不是对具体主体的事实认定。"
+        }
+      }
+    },
+    { "delay": 350, "event": { "node": "matchmaker", "status": "running" } },
+    {
+      "delay": 400,
+      "event": {
+        "node": "matchmaker",
+        "status": "done",
+        "payload": {
+          "fit_score": 25,
+          "recommendation": "不建议",
+          "breakdown": {
+            "skill_fit": { "score": 50, "reason": "没有提供可确认的赛道要求。" },
+            "time_fit": { "score": 50, "reason": "没有明确的报名或提交时间。" },
+            "goal_value": { "score": 20, "reason": "缴费保过承诺与正常竞赛价值不符。" },
+            "access_fit": { "score": 50, "reason": "参赛条件未知。" }
+          },
+          "hard_blockers": ["风险核查未通过，先不要投入时间或费用"],
+          "next_actions": ["停止缴费", "向校内竞赛负责老师核实"],
+          "summary": "先核实赛事真实性和收费主体，再考虑报名。"
+        }
+      }
+    },
+    { "delay": 350, "event": { "node": "planner", "status": "running" } },
+    {
+      "delay": 300,
+      "event": {
+        "node": "planner",
+        "status": "done",
+        "payload": {
+          "feasible": false,
+          "total_weeks": 0,
+          "buffered_weeks": 0,
+          "phases": [],
+          "milestones": [],
+          "risk_note": "风险未核实前不建议投入备赛成本。",
+          "summary": "先完成主办方和收费信息核验。",
+          "weeks_left": null
+        }
+      }
+    },
+    { "delay": 150, "event": { "node": "all", "status": "done" } }
+  ],
+  "irrelevant_chat": [
+    { "delay": 350, "event": { "node": "extractor", "status": "running" } },
+    {
+      "delay": 450,
+      "event": {
+        "node": "extractor",
+        "status": "done",
+        "payload": {
+          "is_event": false,
+          "event": null,
+          "evidence": {},
+          "missing_fields": [],
+          "warnings": [],
+          "injection_detected": false,
+          "confidence": 0.08,
+          "disclaimer": "未识别出赛事内容。"
+        }
+      }
+    },
+    { "delay": 150, "event": { "node": "fact_checker", "status": "done", "payload": { "skipped": true, "reason": "未识别出赛事信息" } } },
+    { "delay": 150, "event": { "node": "matchmaker", "status": "done", "payload": { "skipped": true, "reason": "未识别出赛事信息" } } },
+    { "delay": 150, "event": { "node": "planner", "status": "done", "payload": { "skipped": true, "reason": "未识别出赛事信息" } } },
+    { "delay": 150, "event": { "node": "all", "status": "done" } }
+  ]
+}

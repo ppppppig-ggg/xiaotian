@@ -1,6 +1,6 @@
-import { callJSON } from '../llm'
-import { FACT_CHECK_STEPS_PROMPT } from '../prompts/fact-checker'
-import { evaluateRisk } from '../rules/risk'
+import { callJSON } from '../llm.js'
+import { FACT_CHECK_STEPS_PROMPT } from '../prompts/fact-checker.js'
+import { evaluateRisk } from '../rules/risk.js'
 
 /**
  * 风险核查 = 确定性规则算分 + LLM 生成核验步骤。

@@ -3,12 +3,12 @@ import 'dotenv/config'
 /** 模型调用层：provider 无关，统一走 OpenAI 兼容协议 */
 
 export class LLMError extends Error {
-  constructor(
-    message: string,
-    readonly detail?: unknown,
-  ) {
+  readonly detail?: unknown
+
+  constructor(message: string, detail?: unknown) {
     super(message)
     this.name = 'LLMError'
+    this.detail = detail
   }
 }
 

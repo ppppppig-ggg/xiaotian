@@ -44,6 +44,12 @@ const SCAM_PATTERNS = [
   '100%获奖',
 ]
 
+const INJECTION_PATTERNS = [
+  /忽略.{0,12}(?:以上|之前|前面)?.{0,6}(?:指令|要求|规则)/i,
+  /ignore.{0,24}(?:instructions|rules|the above)/i,
+  /不要输出.{0,8}(?:风险|警告|提示)/i,
+]
+
 function textOf(value: unknown): string {
   if (value == null) return ''
   if (Array.isArray(value)) return value.join(' ')
@@ -52,15 +58,33 @@ function textOf(value: unknown): string {
 }
 
 function normalize(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, '')
+  return value.toLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '')
 }
 
-/** 在原文里找白名单赛事名 / 域名 */
+function extractHosts(text: string): string[] {
+  const tokens = text.match(/(?:https?:\/\/)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/[^\s"'<>]*)?/gi) ?? []
+  return tokens.flatMap((token) => {
+    try {
+      const candidate = token.replace(/[),.;!?，。！？；：]+$/u, '')
+      return [new URL(candidate.includes('://') ? candidate : `https://${candidate}`).hostname.toLowerCase()]
+    } catch {
+      return []
+    }
+  })
+}
+
+function matchesDomain(host: string, domain: string): boolean {
+  const root = domain.toLowerCase().replace(/^www\./, '')
+  return host === root || host.endsWith(`.${root}`)
+}
+
+/** 赛事名称按文本比对，域名按解析后的 hostname 比对，避免前缀相似造成误命中。 */
 function matchWhitelist(text: string) {
   const haystack = normalize(text)
+  const hosts = extractHosts(text)
   for (const item of whitelist as any[]) {
     const nameHit = item.names.find((name: string) => haystack.includes(normalize(name)))
-    const domainHit = item.domains.find((domain: string) => haystack.includes(normalize(domain)))
+    const domainHit = item.domains.find((domain: string) => hosts.some((host) => matchesDomain(host, domain)))
     if (nameHit || domainHit) {
       return { item, nameHit: nameHit ?? null, domainHit: domainHit ?? null }
     }
@@ -81,6 +105,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
   const combined = `${textOf(event)} ${textOf(extraction?.source_versions)} ${rawText}`
 
   let score = 50
+  let scoreCeiling = 100
 
   // 1. 白名单命中
   const hit = matchWhitelist(combined)
@@ -153,14 +178,28 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
   }
 
   // 5. 话术检测
-  const scamHit = SCAM_PATTERNS.find((pattern) => combined.includes(pattern))
+  const normalizedCombined = normalize(combined)
+  const scamHit = SCAM_PATTERNS.find((pattern) => normalizedCombined.includes(normalize(pattern)))
   if (scamHit) {
     score -= 30
+    // 诈骗承诺是强风险信号，白名单或完整字段不能把它抵消成低风险。
+    scoreCeiling = Math.min(scoreCeiling, 39)
     flags.push({
       code: 'scam_keyword',
       level: 'high',
       message: `出现高风险话术「${scamHit}」，正规赛事不会承诺此类结果`,
       evidence: scamHit,
+    })
+  }
+
+  const injectionDetected =
+    extraction?.injection_detected === true || INJECTION_PATTERNS.some((pattern) => pattern.test(rawText))
+  if (injectionDetected) {
+    scoreCeiling = Math.min(scoreCeiling, 79)
+    flags.push({
+      code: 'prompt_injection',
+      level: 'medium',
+      message: '原文包含试图改变分析规则的指令，已按普通文本处理并建议人工核对',
     })
   }
 
@@ -180,6 +219,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     const time = new Date(deadline).getTime()
     if (!Number.isNaN(time) && time < Date.now()) {
       score -= 25
+      scoreCeiling = Math.min(scoreCeiling, 59)
       flags.push({
         code: 'expired',
         level: 'high',
@@ -189,7 +229,7 @@ export function evaluateRisk(extraction: any, rawText: string, sourceType = 'unk
     }
   }
 
-  score = Math.max(0, Math.min(100, score))
+  score = Math.max(0, Math.min(scoreCeiling, score))
   const verdict: Verdict = score >= 80 ? 'green' : score >= 60 ? 'yellow' : 'red'
 
   // 降级用的核验步骤（LLM 不可用时直接使用）

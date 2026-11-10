@@ -1,5 +1,4 @@
 import 'dotenv/config'
-import cors from 'cors'
 import express from 'express'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
@@ -12,6 +11,8 @@ import { plan } from './agents/planner.js'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const PORT = Number(process.env.SERVER_PORT ?? 8787)
+const MAX_ANALYSIS_CHARS = 6000
+const SOURCE_TYPES = new Set(['wechat', 'group_chat', 'official_site', 'social', 'poster', 'unknown'])
 // 默认走 mock：演示和断网时不会意外消耗额度；只有显式 USE_MOCK=false 才调真模型
 const USE_MOCK = (process.env.USE_MOCK ?? 'true').toLowerCase() !== 'false'
 
@@ -24,13 +25,16 @@ interface SseEvent {
   message?: string
 }
 
-const MOCK_SEQUENCE: Array<{ delay: number; event: SseEvent }> = JSON.parse(
+const MOCK_SCENARIOS: Record<string, Array<{ delay: number; event: SseEvent }>> = {
+  official_notice: JSON.parse(
   readFileSync(resolve(__dirname, '../data/mock-run.json'), 'utf-8'),
-)
+  ),
+  ...JSON.parse(readFileSync(resolve(__dirname, '../data/mock-cases.json'), 'utf-8')),
+}
 
 const app = express()
-app.use(cors())
-app.use(express.json({ limit: '2mb' }))
+// 前端通过 Vite /api 代理与后端同源通信；不开放跨站读取本地分析结果。
+app.use(express.json({ limit: '64kb' }))
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
@@ -42,7 +46,9 @@ function readProfile(body: any): Profile {
       ? body.skills.filter((s: unknown) => typeof s === 'string').slice(0, 10)
       : undefined,
     goal: typeof body?.goal === 'string' ? body.goal.slice(0, 40) : undefined,
-    hoursPerWeek: Number.isFinite(Number(body?.hoursPerWeek)) ? Number(body.hoursPerWeek) : undefined,
+    hoursPerWeek: Number.isFinite(Number(body?.hoursPerWeek))
+      ? Math.max(1, Math.min(80, Number(body.hoursPerWeek)))
+      : undefined,
   }
 }
 
@@ -61,8 +67,21 @@ app.post('/api/analyze', async (req, res) => {
     res.status(400).json({ error: '缺少 text 字段' })
     return
   }
+  if (text.length > MAX_ANALYSIS_CHARS) {
+    res.status(413).json({ error: `文本不能超过 ${MAX_ANALYSIS_CHARS} 个字符` })
+    return
+  }
 
-  const sourceType = typeof req.body?.sourceType === 'string' ? req.body.sourceType : 'unknown'
+  const requestedSourceType = req.body?.sourceType
+  const sourceType =
+    typeof requestedSourceType === 'string' && SOURCE_TYPES.has(requestedSourceType)
+      ? requestedSourceType
+      : 'unknown'
+  const sampleId = typeof req.body?.sampleId === 'string' ? req.body.sampleId : ''
+  if (USE_MOCK && !Object.hasOwn(MOCK_SCENARIOS, sampleId)) {
+    res.status(400).json({ error: '演示模式只回放预置样例，请先选择下方的样例按钮。' })
+    return
+  }
   const profile = readProfile(req.body)
 
   res.writeHead(200, {
@@ -92,7 +111,7 @@ app.post('/api/analyze', async (req, res) => {
 
   try {
     if (USE_MOCK) {
-      for (const step of MOCK_SEQUENCE) {
+      for (const step of MOCK_SCENARIOS[sampleId]) {
         if (aborted) return
         await sleep(step.delay)
         send(step.event)
