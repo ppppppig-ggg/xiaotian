@@ -1,22 +1,20 @@
 import type { NodeId } from '../types'
+import { NODES, SOURCE_OPTIONS } from '../types'
 import { downloadMarkdownReport } from '../lib/report'
 
 interface Props {
   finished: boolean
+  running: boolean
+  error: string | null
+  doneCount: number
   payloads: Record<NodeId, any>
   sourceType: string
 }
 
-const VERDICT_STYLE: Record<string, { label: string; className: string }> = {
-  green: { label: '低风险', className: 'text-emerald-200' },
-  yellow: { label: '待核实', className: 'text-amber-100' },
-  red: { label: '高风险', className: 'text-rose-200' },
-}
-
-const LEVEL_STYLE: Record<string, string> = {
-  high: 'border-rose-300/25 bg-rose-300/[0.05] text-rose-200',
-  medium: 'border-amber-200/25 bg-amber-200/[0.05] text-amber-100',
-  low: 'border-white/10 text-[#a4b8be]',
+const VERDICT_LABEL: Record<string, string> = {
+  green: '低风险',
+  yellow: '待核实',
+  red: '高风险',
 }
 
 const DIMENSION_LABEL: Record<string, string> = {
@@ -26,269 +24,336 @@ const DIMENSION_LABEL: Record<string, string> = {
   access_fit: '门槛可达',
 }
 
-function Metric({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="metric-card p-3">
-      <p className="text-[11px] text-[#8aa1aa]">{label}</p>
-      <p className={`mt-0.5 text-sm font-medium ${tone ?? 'text-slate-200'}`}>{value}</p>
-    </div>
-  )
+const FIELD_LABEL: Record<string, string> = {
+  name: '赛事名称',
+  'event.name': '赛事名称',
+  organizer: '主办方',
+  'event.organizer': '主办方',
+  'registration.deadline': '报名截止',
+  'event.registration.deadline': '报名截止',
+  'submission.deadline': '作品提交',
+  'event.submission.deadline': '作品提交',
+  'registration.url': '报名入口',
+  'event.registration.url': '报名入口',
 }
 
-export function ReportPanel({ finished, payloads, sourceType }: Props) {
+function fieldLabel(field: string) {
+  return FIELD_LABEL[field] ?? field
+}
+
+export function ReportPanel({ finished, running, error, doneCount, payloads, sourceType }: Props) {
   const extractor = payloads.extractor
   const event = extractor?.event ?? {}
   const checker = payloads.fact_checker
   const matcher = payloads.matchmaker
   const planner = payloads.planner
 
+  if (error) {
+    return (
+      <div className="report report-failed">
+        <p className="report-kicker">决策报告</p>
+        <h2 className="empty-title">这次没有跑完。</h2>
+        <p className="empty-copy">{error}</p>
+        <p className="empty-hint">检查服务状态后，点左侧的「开始研判」或「重试」重新发起。</p>
+      </div>
+    )
+  }
+
+  if (running) {
+    return (
+      <div className="report report-running" aria-busy="true">
+        <p className="report-kicker">决策报告</p>
+        <h2 className="empty-title">正在研判。</h2>
+        <p className="empty-copy">
+          四个节点依次进行，结果会写到这一页；中途可以看上方每个节点的状态和耗时。
+        </p>
+        <div
+          className="run-progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={NODES.length}
+          aria-valuenow={doneCount}
+        >
+          <span style={{ width: `${(doneCount / NODES.length) * 100}%` }} />
+        </div>
+        <p className="run-meta">
+          {doneCount} / {NODES.length} 节点完成
+        </p>
+      </div>
+    )
+  }
+
   if (!finished) {
     return (
-      <div className="report-empty flex h-full min-h-[480px] flex-col items-center justify-center gap-4 p-6 text-center sm:p-8">
-        <div className="relative z-[1] grid h-32 w-32 place-items-center rounded-full border border-[#69dfc5]/15 bg-[#061720]/35">
-          <svg viewBox="0 0 120 120" className="h-28 w-28" fill="none" aria-hidden="true">
-            <circle cx="60" cy="60" r="48" stroke="#71cbbd" strokeOpacity=".23" strokeDasharray="2 6" />
-            <circle cx="60" cy="60" r="36" stroke="#71cbbd" strokeOpacity=".3" />
-            <circle cx="60" cy="60" r="22" stroke="#71cbbd" strokeOpacity=".22" strokeDasharray="2 5" />
-            <path d="M60 60 91 25a47 47 0 0 1 15 28Z" fill="#69dfc5" fillOpacity=".12" />
-            <path d="M60 12v96M12 60h96M26 26l68 68M94 26 26 94" stroke="#71cbbd" strokeOpacity=".16" />
-            <circle cx="60" cy="60" r="4" fill="#8ce7d4" />
-            <circle cx="91" cy="42" r="2.5" fill="#8ce7d4" fillOpacity=".8" />
-          </svg>
-        </div>
-        <div className="relative z-[1]">
-          <p className="panel-eyebrow">READY TO SCAN</p>
-          <h2 className="mt-2 text-lg font-semibold text-[#dce9eb]">你的决策报告将在这里呈现</h2>
-          <p className="mx-auto mt-2 max-w-[300px] text-xs leading-6 text-[#8199a2]">
-            选择一条赛事样例并开始分析，查看信息摘录、风险证据、个人匹配和备赛计划。
-          </p>
-        </div>
-        <div className="relative z-[1] flex flex-wrap items-center justify-center gap-2 text-[10px] text-[#8aa4ad]">
-          {['信息抽取', '风险核验', '个人匹配', '备赛规划'].map((step, index) => (
-            <span key={step} className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-black/10 px-2.5 py-1.5">
-              <span className="font-mono text-[#75d7c2]">0{index + 1}</span>{step}
-            </span>
-          ))}
-        </div>
+      <div className="report report-empty">
+        <p className="report-kicker">决策报告</p>
+        <h2 className="empty-title">还差一条赛事通知。</h2>
+        <p className="empty-copy">
+          在左侧粘贴原文，或选一个预置样例。四个节点会依次把事实、风险、匹配和计划写在这一页。
+        </p>
+        <p className="empty-hint">演示模式不调用模型；实时模式的原文只用于本次研判。</p>
       </div>
     )
   }
 
   const isEvent = extractor?.is_event !== false
-  const verdict = checker ? (VERDICT_STYLE[checker.verdict] ?? VERDICT_STYLE.yellow) : null
+  const verdict = VERDICT_LABEL[checker?.verdict] ?? '待核实'
+  const sourceLabel =
+    SOURCE_OPTIONS.find((option) => option.value === sourceType)?.short ?? '未知来源'
   const registrationUrl = typeof event.registration?.url === 'string' ? event.registration.url : ''
   const safeRegistrationUrl = /^https?:\/\//i.test(registrationUrl)
+  const evidenceCount = Object.keys(extractor?.evidence ?? {}).length
 
   return (
-    <div className="decision-report animate-fade-in-up h-full space-y-4 overflow-y-auto rounded-[20px] p-4 sm:p-5">
-      <div>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="panel-eyebrow">03 / 决策报告</p>
-            <h2 className="mt-1 text-base font-semibold leading-snug text-slate-100">
-              {isEvent ? (event.name ?? '未识别出赛事') : '这段内容里没有识别出赛事'}
-            </h2>
-            {isEvent && checker?.verdict_reason && (
-              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{checker.verdict_reason}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => downloadMarkdownReport(payloads, sourceType)}
-            className="shrink-0 rounded-xl border border-[#69dfc5]/20 bg-[#69dfc5]/[0.06] px-3 py-2 text-xs font-medium text-[#a5eadb] transition hover:border-[#69dfc5]/40 hover:bg-[#69dfc5]/[0.1]"
-          >
-            导出报告
-          </button>
+    <div className="report">
+      <header className="report-head">
+        <div className="report-head-main">
+          <p className="report-kicker">决策报告</p>
+          <h2 className="report-title">
+            {isEvent ? (event.name ?? '未识别出赛事') : '这段内容里没有识别出赛事'}
+          </h2>
+          {isEvent && checker?.verdict_reason && (
+            <p className="report-reason">{checker.verdict_reason}</p>
+          )}
+          {isEvent && (
+            <div className="report-meta">
+              <span className="verdict-tag" data-verdict={checker?.verdict ?? 'yellow'}>
+                <i aria-hidden="true" />
+                {verdict}
+              </span>
+              <span>来源 {sourceLabel}</span>
+              <span>置信度 {Math.round((extractor?.confidence ?? 0) * 100)}%</span>
+            </div>
+          )}
         </div>
-      </div>
+        <button
+          type="button"
+          className="text-action"
+          onClick={() => downloadMarkdownReport(payloads, sourceType)}
+        >
+          导出 Markdown
+        </button>
+      </header>
 
       {!isEvent ? (
-        <p className="rounded-lg border border-slate-800 bg-slate-950/40 p-3 text-sm text-slate-400">
-          这段文本不像赛事通知。可以是群聊闲聊、广告或无关内容。换个来源再试试？
+        <p className="report-plain">
+          这段文本不像赛事通知，可能是群聊闲聊、广告或无关内容。换一条来源再试。
         </p>
       ) : (
         <>
-          <div className="rounded-lg border border-slate-800 bg-slate-950/30 p-3">
-            <p className="text-xs font-medium text-slate-300">抽取到的赛事信息</p>
-            <dl className="mt-2 grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-xs">
-              <dt className="text-slate-500">主办方</dt>
-              <dd className="break-words text-slate-300">{event.organizer?.join('、') || '未提供'}</dd>
-              <dt className="text-slate-500">赛事级别</dt>
-              <dd className="text-slate-300">{event.level || '未提供'}</dd>
-              <dt className="text-slate-500">报名截止</dt>
-              <dd className="text-slate-300">{event.registration?.deadline || event.registration?.raw_time_text || '未提供'}</dd>
-              <dt className="text-slate-500">报名入口</dt>
-              <dd className="break-all text-sky-300">
+          <div className="metrics">
+            <div className="metric">
+              <p className="metric-label">风险结论</p>
+              <p className="metric-value" data-verdict={checker?.verdict ?? 'yellow'}>
+                {verdict}
+              </p>
+            </div>
+            <div className="metric">
+              <p className="metric-label">权威度</p>
+              <p className="metric-value">
+                {checker ? checker.authority_score : '—'}
+                <small>/100</small>
+              </p>
+            </div>
+            <div className="metric">
+              <p className="metric-label">匹配分</p>
+              <p className="metric-value">
+                {matcher ? matcher.fit_score : '—'}
+                <small>/100</small>
+              </p>
+            </div>
+            <div className="metric">
+              <p className="metric-label">建议</p>
+              <p className="metric-value metric-text">{matcher?.recommendation ?? '—'}</p>
+            </div>
+          </div>
+
+          <section className="report-section">
+            <h3 className="section-title">
+              赛事事实
+              <span className="section-rule" aria-hidden="true" />
+            </h3>
+            <dl className="facts">
+              <dt>主办方</dt>
+              <dd>{event.organizer?.join('、') || '未提供'}</dd>
+              <dt>赛事级别</dt>
+              <dd>{event.level || '未提供'}</dd>
+              <dt>报名截止</dt>
+              <dd>{event.registration?.deadline || event.registration?.raw_time_text || '未提供'}</dd>
+              <dt>报名入口</dt>
+              <dd>
                 {safeRegistrationUrl ? (
-                  <a href={registrationUrl} target="_blank" rel="noreferrer" className="underline decoration-sky-500/40 underline-offset-2">
+                  <a href={registrationUrl} target="_blank" rel="noreferrer">
                     {registrationUrl}
                   </a>
-                ) : registrationUrl || '未提供'}
+                ) : (
+                  registrationUrl || '未提供'
+                )}
               </dd>
-              <dt className="text-slate-500">作品提交</dt>
-              <dd className="text-slate-300">{event.submission?.deadline || event.submission?.raw_time_text || '未提供'}</dd>
-              <dt className="text-slate-500">参赛资格</dt>
-              <dd className="break-words text-slate-300">{event.eligibility || '未提供'}</dd>
-              <dt className="text-slate-500">赛道</dt>
-              <dd className="break-words text-slate-300">
-                {event.tracks?.map((track: any) => track.name).filter(Boolean).join('、') || '未提供'}
+              <dt>作品提交</dt>
+              <dd>{event.submission?.deadline || event.submission?.raw_time_text || '未提供'}</dd>
+              <dt>参赛资格</dt>
+              <dd>{event.eligibility || '未提供'}</dd>
+              <dt>赛道</dt>
+              <dd>
+                {event.tracks
+                  ?.map((track: any) => track.name)
+                  .filter(Boolean)
+                  .join('、') || '未提供'}
               </dd>
             </dl>
-            {Object.keys(extractor?.evidence ?? {}).length > 0 && (
-              <details className="mt-3 border-t border-slate-800 pt-2">
-                <summary className="cursor-pointer text-[11px] text-sky-300">查看原文证据摘录</summary>
-                <dl className="mt-2 space-y-2 text-[11px]">
+
+            {evidenceCount > 0 && (
+              <details className="evidence">
+                <summary>
+                  原文证据
+                  <span>{evidenceCount} 条</span>
+                </summary>
+                <div className="evidence-body">
                   {Object.entries(extractor.evidence).map(([field, quote]: [string, any]) => (
-                    <div key={field}>
-                      <dt className="text-slate-500">{field}</dt>
-                      <dd className="mt-0.5 break-words text-slate-300">“{String(quote)}”</dd>
+                    <div className="evidence-item" key={field}>
+                      <p>{fieldLabel(field)}</p>
+                      <p className="evidence-quote">“{String(quote)}”</p>
                     </div>
                   ))}
-                </dl>
+                </div>
               </details>
             )}
+
             {(extractor?.warnings?.length > 0 || extractor?.missing_fields?.length > 0) && (
-              <div className="mt-3 space-y-1 border-t border-slate-800 pt-2 text-[11px] text-amber-300/80">
-                {extractor.warnings?.map((warning: string, index: number) => <p key={`warning-${index}`}>提示：{warning}</p>)}
-                {extractor.missing_fields?.length > 0 && <p>未能从原文确认：{extractor.missing_fields.join('、')}</p>}
+              <div className="report-notes">
+                {extractor.warnings?.map((warning: string, index: number) => (
+                  <p key={`warning-${index}`}>提示：{warning}</p>
+                ))}
+                {extractor.missing_fields?.length > 0 && (
+                  <p>未能从原文确认：{extractor.missing_fields.join('、')}</p>
+                )}
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="grid grid-cols-2 gap-2">
-            <Metric label="风险结论" value={verdict?.label ?? '—'} tone={verdict?.className} />
-            <Metric label="权威度" value={checker ? `${checker.authority_score}` : '—'} />
-            <Metric
-              label="匹配分"
-              value={matcher ? `${matcher.fit_score}` : '—'}
-              tone="text-sky-300"
-            />
-            <Metric
-              label="建议"
-              value={matcher?.recommendation ?? '—'}
-              tone={matcher?.recommendation === '不建议' ? 'text-red-300' : 'text-slate-200'}
-            />
-          </div>
+          <section className="report-section">
+            <h3 className="section-title">
+              风险与核验
+              <span className="section-rule" aria-hidden="true" />
+            </h3>
 
-          {checker?.known_facts?.length > 0 && (
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2.5">
-              <ul className="space-y-1 text-xs text-emerald-300/90">
-                {checker.known_facts.map((fact: string, i: number) => (
-                  <li key={i}>✓ {fact}</li>
+            {checker?.known_facts?.length > 0 && (
+              <ul className="fact-list">
+                {checker.known_facts.map((fact: string, index: number) => (
+                  <li key={index}>{fact}</li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
 
-          {checker?.risk_flags?.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-slate-300">风险提示</p>
-              <ul className="mt-1.5 space-y-1.5">
-                {checker.risk_flags.map((flag: any, i: number) => (
-                  <li
-                    key={i}
-                    className={`rounded-lg border bg-slate-950/40 px-2.5 py-1.5 text-xs ${
-                      LEVEL_STYLE[flag.level] ?? LEVEL_STYLE.low
-                    }`}
-                  >
-                    {flag.message}
+            {checker?.risk_flags?.length > 0 ? (
+              <ul className="risk-list">
+                {checker.risk_flags.map((flag: any, index: number) => (
+                  <li className="risk-item" data-level={flag.level} key={index}>
+                    <i aria-hidden="true" />
+                    <span>{flag.message}</span>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            ) : (
+              <p className="report-plain">未命中风险信号。仍需以主办方官方信息为准。</p>
+            )}
 
-          {matcher?.breakdown && (
-            <div>
-              <p className="text-xs font-medium text-slate-300">四维打分</p>
-              <div className="mt-1.5 space-y-1.5">
-                {Object.entries(matcher.breakdown).map(([key, dim]: [string, any]) => (
-                  <div key={key} className="text-xs">
-                    <div className="flex items-center justify-between text-slate-400">
-                      <span>{DIMENSION_LABEL[key] ?? key}</span>
-                      <span className="text-slate-300">{dim.score}</span>
+            {checker?.verify_steps?.length > 0 && (
+              <ol className="verify-list">
+                {checker.verify_steps.map((step: any, index: number) => (
+                  <li className="verify-item" key={index}>
+                    <div>
+                      <p className="verify-action">{step.action}</p>
+                      <p className="verify-meta">去哪：{step.where}</p>
+                      <p className="verify-meta">通过标准：{step.pass_criteria}</p>
                     </div>
-                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-slate-800">
-                      <div
-                        className="h-full rounded-full bg-sky-500/70"
-                        style={{ width: `${Math.max(0, Math.min(100, dim.score))}%` }}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+
+          <section className="report-section">
+            <h3 className="section-title">
+              匹配评估
+              <span className="section-rule" aria-hidden="true" />
+            </h3>
+
+            {matcher?.breakdown && (
+              <div className="dimensions">
+                {Object.entries(matcher.breakdown).map(([key, dimension]: [string, any]) => (
+                  <div className="dimension" key={key}>
+                    <div className="dimension-head">
+                      <span>{DIMENSION_LABEL[key] ?? key}</span>
+                      <b>{dimension.score}</b>
+                    </div>
+                    <div className="dimension-track">
+                      <span
+                        className="dimension-fill"
+                        style={{ width: `${Math.max(0, Math.min(100, dimension.score))}%` }}
                       />
                     </div>
-                    <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{dim.reason}</p>
+                    <p className="dimension-reason">{dimension.reason}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {checker?.verify_steps?.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-slate-300">需要你手动核验</p>
-              <ul className="mt-1.5 space-y-1.5 text-xs text-slate-400">
-                {checker.verify_steps.map((step: any, i: number) => (
-                  <li key={i} className="rounded-lg border border-slate-800 bg-slate-950/40 p-2">
-                    <p className="text-slate-300">
-                      {i + 1}. {step.action}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">去哪：{step.where}</p>
-                    <p className="text-[11px] text-slate-500">通过标准：{step.pass_criteria}</p>
-                  </li>
+            {matcher?.hard_blockers?.length > 0 && (
+              <div className="blocker">
+                <p>硬门槛</p>
+                <ul>
+                  {matcher.hard_blockers.map((blocker: string, index: number) => (
+                    <li key={index}>{blocker}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {matcher?.next_actions?.length > 0 && (
+              <ul className="action-list">
+                {matcher.next_actions.map((action: string, index: number) => (
+                  <li key={index}>{action}</li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+          </section>
 
           {planner?.phases?.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-slate-300">
-                备赛计划（{planner.total_weeks} 周 · 缓冲 {planner.buffered_weeks} 周）
-              </p>
-              <ul className="mt-1.5 space-y-1.5 text-xs">
-                {planner.phases.map((phase: any, i: number) => (
-                  <li key={i} className="rounded-lg border border-slate-800 bg-slate-950/40 p-2">
-                    <p className="text-slate-300">
-                      {phase.week_range} · {phase.name}
-                    </p>
-                    <ul className="mt-1 space-y-0.5 text-[11px] text-slate-500">
-                      {phase.tasks?.map((task: any, j: number) => (
-                        <li key={j}>
-                          · {task.task}
-                          {task.output && <span className="text-slate-600"> → {task.output}</span>}
-                        </li>
-                      ))}
-                    </ul>
+            <section className="report-section">
+              <h3 className="section-title">
+                备赛计划
+                <span className="section-rule" aria-hidden="true" />
+                <span className="section-note">
+                  {planner.total_weeks} 周 · 缓冲 {planner.buffered_weeks} 周
+                </span>
+              </h3>
+              <ol className="plan">
+                {planner.phases.map((phase: any, index: number) => (
+                  <li className="plan-item" key={index}>
+                    <span className="plan-week">{phase.week_range}</span>
+                    <div>
+                      <p className="plan-name">{phase.name}</p>
+                      <ul className="plan-tasks">
+                        {phase.tasks?.map((task: any, taskIndex: number) => (
+                          <li key={taskIndex}>
+                            {task.task}
+                            {task.output && <span> / {task.output}</span>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </li>
                 ))}
-              </ul>
-            </div>
-          )}
-
-          {matcher?.next_actions?.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-slate-300">下一步动作</p>
-              <ul className="mt-1 space-y-1 text-xs text-slate-400">
-                {matcher.next_actions.map((action: string, i: number) => (
-                  <li key={i}>· {action}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {matcher?.hard_blockers?.length > 0 && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-2.5">
-              <p className="text-xs font-medium text-red-300">硬门槛</p>
-              <ul className="mt-1 space-y-0.5 text-xs text-red-300/80">
-                {matcher.hard_blockers.map((blocker: string, i: number) => (
-                  <li key={i}>· {blocker}</li>
-                ))}
-              </ul>
-            </div>
+              </ol>
+            </section>
           )}
         </>
       )}
 
-      <p className="border-t border-slate-800 pt-2.5 text-[11px] leading-relaxed text-slate-600">
-        本工具不判定赛事真伪，仅提示风险与核验路径，请以主办方官方信息为准。
+      <p className="report-foot">
+        本工具不判定赛事真伪，仅提示风险与核验路径。报名与截止时间请以主办方官方信息为准。
       </p>
     </div>
   )

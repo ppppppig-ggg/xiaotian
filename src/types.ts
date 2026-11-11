@@ -2,6 +2,12 @@ export type NodeId = 'extractor' | 'fact_checker' | 'matchmaker' | 'planner'
 
 export type NodeStatus = 'idle' | 'running' | 'done' | 'error'
 
+export type AppMode = 'checking' | 'mock' | 'live' | 'offline'
+
+export type SourceType = 'wechat' | 'group_chat' | 'official_site' | 'social' | 'poster'
+
+export type SampleId = 'official_notice' | 'vague_group_chat' | 'scam_notice' | 'irrelevant_chat'
+
 export interface SseEvent {
   node: NodeId | 'all'
   status: NodeStatus
@@ -15,6 +21,41 @@ export interface NodeMeta {
   title: string
   subtitle: string
   runningText: string
+}
+
+export interface Timing {
+  start: number
+  end?: number
+}
+
+export interface AnalysisState {
+  statuses: Record<NodeId, NodeStatus>
+  payloads: Partial<Record<NodeId, any>>
+  timings: Partial<Record<NodeId, Timing>>
+  finished: boolean
+  error: string | null
+}
+
+export interface SourceOption {
+  value: SourceType
+  label: string
+  short: string
+}
+
+export interface Sample {
+  id: SampleId
+  label: string
+  text: string
+  sourceType: SourceType
+}
+
+export const MAX_TEXT_CHARS = 6000
+
+export const EMPTY_STATUS: Record<NodeId, NodeStatus> = {
+  extractor: 'idle',
+  fact_checker: 'idle',
+  matchmaker: 'idle',
+  planner: 'idle',
 }
 
 export const NODES: NodeMeta[] = [
@@ -45,5 +86,40 @@ export const NODES: NodeMeta[] = [
     title: '备赛规划',
     subtitle: '倒排工期 + 任务拆解',
     runningText: '正在倒排工期…',
+  },
+]
+
+export const SOURCE_OPTIONS: SourceOption[] = [
+  { value: 'wechat', label: '公众号 / 微信推文', short: '公众号' },
+  { value: 'group_chat', label: '群聊消息', short: '群聊' },
+  { value: 'official_site', label: '官方网站', short: '官网' },
+  { value: 'social', label: '社交平台', short: '社交平台' },
+  { value: 'poster', label: '海报 / OCR 文本', short: '海报 OCR' },
+]
+
+export const SAMPLES: Sample[] = [
+  {
+    id: 'official_notice',
+    label: '公众号推文',
+    sourceType: 'wechat',
+    text: '【传智杯】第十届传智杯全国大学生计算机应用能力大赛正式启动！报名截止 2026-11-20，作品提交截止 2026-12-15。本届新增 Vibe Coding 赛道，要求以 AI 辅助完成轻量 Web 应用，评审重点关注过程可复现性。报名请登录官网 https://www.itcast.cn/ 提交材料。主办单位：传智教育。',
+  },
+  {
+    id: 'vague_group_chat',
+    label: '群聊消息',
+    sourceType: 'group_chat',
+    text: '群主：那个传智杯下周三截止啊，想报的赶紧，我看群里说今年加了个 AI 编程赛道，具体规则你们去问学长。',
+  },
+  {
+    id: 'scam_notice',
+    label: '可疑赛事',
+    sourceType: 'group_chat',
+    text: '【速报】全国青年创新大赛开始报名！无需考试，交钱即可拿证，保过保就业，保研必备！名额有限，先到先得，加微信 138xxxx8888 咨询。',
+  },
+  {
+    id: 'irrelevant_chat',
+    label: '无效内容',
+    sourceType: 'social',
+    text: '今天食堂的红烧肉又涨价了，谁懂啊，窗口阿姨说下周还要涨两块。',
   },
 ]
