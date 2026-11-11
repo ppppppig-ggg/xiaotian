@@ -84,7 +84,7 @@ flowchart LR
 
 | 层 | 选型 | 说明 |
 |---|---|---|
-| 前端 | Vite 8 + React 19 + TypeScript 7 | 无 UI 组件库，Tailwind 4 手写样式 |
+| 前端 | Vite 8 + React 19 + TypeScript 7 | 无 UI 组件库，Tailwind 4 + 手写 CSS |
 | 后端 | Node + Express 5 | 不引数据库，白名单用静态 JSON |
 | 通信 | SSE（Server-Sent Events） | 单向推流，节点逐个点亮 |
 | 模型 | OpenAI 兼容协议 | 通过 `LLM_BASE_URL` 与 `LLM_MODEL` 指向兼容服务 |
@@ -115,9 +115,10 @@ campusrace-radar/
 │  ├─ fault.mjs         # 故障注入
 │  └─ report.md         # 评测报告（生成物，已提交作证据）
 ├─ scripts/
-│  └─ render_technical_pdf.py # 从 Markdown 生成技术说明 PDF
+│  └─ md2pdf.mjs        # Markdown → PDF（技术文档生成脚本）
 └─ docs/
    ├─ defense-qa.md     # 答辩问答
+   ├─ technical-document.md  # 参赛技术文档源稿
    ├─ video-script.md   # 视频分镜
    └─ prompt-log/       # 过程材料（截图/录屏/日志）
 ```
@@ -142,9 +143,9 @@ campusrace-radar/
 
 `docs/prompt-log/` 目录存放参赛证据材料：
 
-- `demo.gif` —— 产品演示动图（已提供，不能替代 MP4）
-- `video-final.mp4` —— 5–8 分钟、1080p 的演示视频，至少 2 分钟展示真实 AI 协同过程（待录制）
-- `conversation-*.md` / `screenshot-*.png` —— 至少 3 个核心功能迭代的完整 Prompt 链与原始截图/导出（待补齐）
+- `demo.gif` —— 产品演示动图（预览用，不能替代 MP4）
+- `video-final.mp4` —— 5–8 分钟、1080p 的演示视频，随大赛材料单独提交，仓库不重复存放
+- `prompt-chain.md` / `process-log.md` —— 三次核心迭代的交互过程与开发日志（重建稿已标注材料性质，不冒充原始导出）
 
 `process-log.md` 是开发过程回顾，不能代替 AI 工具导出的完整对话。不要用事后编写的摘要冒充原始 Prompt 记录。
 
