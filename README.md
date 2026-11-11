@@ -131,7 +131,8 @@ campusrace-radar/
 | [演示视频脚本](docs/video-script.md) | 产品演示 + AI 协同过程的分镜表 |
 | [评测报告](eval/report.md) | 12 条用例的逐项结果与准确率 |
 | [技术设计说明](docs/technical-design.md) | 架构、意图控制、AI 代码约束、可复现性论证 |
-| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 评审提交用技术文档，18 页（`node scripts/md2pdf.mjs docs/technical-design.md output/pdf/campusrace-technical-design.pdf` 重新生成） |
+| [参赛技术文档（提交版）](output/pdf/campusrace-technical-document.pdf) | 提交用 PDF，14 页，含参赛信息、需求、架构、AI 方案、测试部署、创新与展望；源稿见 [technical-document.md](docs/technical-document.md) |
+| [技术设计 PDF](output/pdf/campusrace-technical-design.pdf) | 深入版技术设计说明，18 页（`node scripts/md2pdf.mjs docs/technical-design.md output/pdf/campusrace-technical-design.pdf` 重新生成） |
 | [Prompt 链重建](docs/prompt-log/prompt-chain.md) | 三次核心迭代的交互过程（重建稿） |
 | [提交检查清单](docs/submission-checklist.md) | 按评审要求逐项确认代码与材料 |
 | [10 分钟复现指南](docs/reproduction.md) | Windows 环境安装、启动、演示与排错 |
