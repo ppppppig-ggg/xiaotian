@@ -121,7 +121,13 @@ app.post('/api/analyze', async (req, res) => {
         // 固定回放里的匹配结果是「填了画像」的版本；
         // 用户没填画像时改发待补充，避免演示回放再次出现「空画像高分」。
         if (!hasProfile && step.event.node === 'matchmaker' && step.event.status === 'done') {
-          send({ ...step.event, payload: emptyMatchResult('unknown') })
+          const participation =
+            (
+              step.event.payload as
+                | { participation_type?: 'individual' | 'team' | 'unknown' }
+                | undefined
+            )?.participation_type ?? 'unknown'
+          send({ ...step.event, payload: emptyMatchResult(participation) })
         } else {
           send(step.event)
         }

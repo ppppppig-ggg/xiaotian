@@ -100,9 +100,9 @@ export const SOURCE_OPTIONS: SourceOption[] = [
 export const SAMPLES: Sample[] = [
   {
     id: 'official_notice',
-    label: '公众号推文',
-    sourceType: 'wechat',
-    text: '【传智杯】第十届传智杯全国大学生计算机应用能力大赛正式启动！报名截止 2026-11-20，作品提交截止 2026-12-15。本届新增 Vibe Coding 赛道，要求以 AI 辅助完成轻量 Web 应用，评审重点关注过程可复现性。报名请登录官网 https://www.itcast.cn/ 提交材料。主办单位：传智教育。',
+    label: '官方通知',
+    sourceType: 'official_site',
+    text: '【官方通知】2026第九届传智杯全国大学生数智创新与AI应用大赛——AI创新应用挑战赛国赛安排公布。主办单位：全国高等院校计算机基础教育研究会。国赛报名时间：2026-12-10 至 2026-12-21；作品提交截止：2026-12-27。本赛项为个人赛，以个人为单位参赛。作品要求：借助 AI 辅助编程完成可演示的全栈应用，提交代码仓库、技术文档 PDF 与 5-8 分钟演示视频，评审重点关注过程可复现性与 Prompt 链。参赛对象：全日制在校研究生、本科生、高职高专学生。报名与提交入口：https://www.boxuegu.com/match/ 。',
   },
   {
     id: 'vague_group_chat',

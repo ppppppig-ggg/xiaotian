@@ -2022,3 +2022,30 @@
   font-size: 9px;
   letter-spacing: 0.04em;
 }
+
+.plan-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.plan-hint {
+  color: var(--ash-dim);
+  font-size: 9.5px;
+  line-height: 1.6;
+}
+
+.plan-export {
+  flex: none;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .plan-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+}

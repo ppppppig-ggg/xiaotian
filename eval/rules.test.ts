@@ -8,6 +8,7 @@ import { computeWeightedScore } from '../server/rules/score'
 import { buildVerification } from '../server/rules/verification'
 import { detectParticipation } from '../server/rules/participation'
 import { match } from '../server/agents/matchmaker'
+import { buildPlanCalendar } from '../src/lib/calendar'
 
 let passed = 0
 let failed = 0
@@ -163,6 +164,37 @@ function check(name: string, condition: boolean, detail?: string) {
   check('个人赛', detectParticipation('本次比赛为个人赛，单人提交作品') === 'individual')
   check('团队赛', detectParticipation('每队 3 人，可跨专业组队') === 'team')
   check('没有线索时为 unknown', detectParticipation('报名截止下周三') === 'unknown')
+}
+
+// 8. 日历导出：任务与里程碑都生成 VEVENT
+{
+  const ics = buildPlanCalendar(
+    {
+      phases: [
+        {
+          week_range: 'W1',
+          tasks: [
+            {
+              task: '做原型',
+              owner: '我',
+              due: 'W1',
+              output: '可演示页面',
+              acceptance: '能完成一次完整流程',
+            },
+          ],
+        },
+      ],
+      milestones: [{ label: '演示', due: 'W2' }],
+    },
+    '测试赛事',
+    new Date('2026-11-12T00:00:00+08:00'),
+  )
+  console.log('8. 日历导出')
+  check('包含 VCALENDAR', ics.startsWith('BEGIN:VCALENDAR') && ics.endsWith('END:VCALENDAR'))
+  check('生成 2 个事件', (ics.match(/BEGIN:VEVENT/g) || []).length === 2)
+  check('任务落在周一', ics.includes('DTSTART;VALUE=DATE:20261109'))
+  check('包含任务摘要', ics.includes('SUMMARY:备赛：做原型'))
+  check('空计划返回空串', buildPlanCalendar({ phases: [] }) === '')
 }
 
 console.log(`\n通过 ${passed}，失败 ${failed}`)

@@ -340,7 +340,7 @@ export function Workspace({
                 </button>
               ))}
             </div>
-            <p className="samples-note">预置样例用于演示流程，日期与名称并非赛事官方最新通知。</p>
+            <p className="samples-note">预置样例用于演示流程；赛事信息来自公开通知，请以官网最新公告为准。</p>
           </div>
 
           <div className="input-actions">

@@ -1,6 +1,7 @@
 import type { NodeId } from '../types'
 import { NODES, SOURCE_OPTIONS } from '../types'
 import { downloadMarkdownReport } from '../lib/report'
+import { downloadPlanCalendar } from '../lib/calendar'
 
 interface Props {
   finished: boolean
@@ -487,6 +488,17 @@ export function ReportPanel({ finished, running, error, doneCount, payloads, sou
                   {warning}
                 </p>
               ))}
+
+              <div className="plan-toolbar">
+                <p className="plan-hint">按任务所在周生成周一提醒；精确截止以官方通知为准。</p>
+                <button
+                  type="button"
+                  className="text-action plan-export"
+                  onClick={() => downloadPlanCalendar(planner, event.name ?? '备赛计划')}
+                >
+                  导出 .ics
+                </button>
+              </div>
 
               <ol className="plan">
                 {planner.phases.map((phase: any, index: number) => (

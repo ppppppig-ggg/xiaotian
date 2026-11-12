@@ -1,11 +1,16 @@
 [
   {
     "id": "chuanzhibei",
-    "names": ["传智杯", "传智杯全国大学生计算机应用能力大赛"],
-    "organizer": ["传智教育"],
-    "domains": ["itcast.cn"],
+    "names": [
+      "传智杯",
+      "传智杯全国大学生计算机应用能力大赛",
+      "传智杯全国大学生数智创新与AI应用大赛",
+      "2026第九届传智杯全国大学生数智创新与AI应用大赛"
+    ],
+    "organizer": ["全国高等院校计算机基础教育研究会", "传智教育"],
+    "domains": ["itcast.cn", "boxuegu.com"],
     "level": "国家级",
-    "note": "企业主办的全国性赛事，官网可查"
+    "note": "全国高等院校计算机基础教育研究会主办，官网 boxuegu.com/match"
   },
   {
     "id": "lanqiao",
