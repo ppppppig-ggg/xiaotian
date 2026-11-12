@@ -10,6 +10,7 @@ interface Props {
 
 export function ProfileForm({ value, onChange }: Props) {
   const update = (patch: Partial<ProfileFormValue>) => onChange({ ...value, ...patch })
+  const filled = Boolean(value.major || value.grade || value.skills || value.goal || value.hours)
 
   return (
     <details className="profile">
@@ -17,7 +18,9 @@ export function ProfileForm({ value, onChange }: Props) {
         <span className="profile-id">
           <span className="profile-label">参赛画像</span>
           <span className="profile-value">
-            {value.major ? `${value.major} · ${value.grade}` : '未填写，匹配会偏保守'}
+            {filled
+              ? `${value.major || '专业未填'} · ${value.grade || '年级未填'}`
+              : '未填写，匹配会等填完再算'}
           </span>
         </span>
         <svg className="profile-caret" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -38,6 +41,7 @@ export function ProfileForm({ value, onChange }: Props) {
         <label className="field">
           <span>年级</span>
           <select value={value.grade} onChange={(event) => update({ grade: event.target.value })}>
+            <option value="">未选择</option>
             {GRADES.map((grade) => (
               <option key={grade}>{grade}</option>
             ))}
@@ -56,6 +60,7 @@ export function ProfileForm({ value, onChange }: Props) {
         <label className="field">
           <span>目标</span>
           <select value={value.goal} onChange={(event) => update({ goal: event.target.value })}>
+            <option value="">未选择</option>
             {GOALS.map((goal) => (
               <option key={goal}>{goal}</option>
             ))}
@@ -68,7 +73,8 @@ export function ProfileForm({ value, onChange }: Props) {
             type="number"
             min={1}
             max={80}
-            value={value.hours}
+            value={value.hours || ''}
+            placeholder="10"
             onChange={(event) => update({ hours: Number(event.target.value) || 0 })}
           />
         </label>

@@ -54,7 +54,7 @@ const MODE_TITLE: Record<AppMode, string> = {
 const MODE_NOTE: Record<AppMode, string> = {
   checking: '正在检查服务状态，确认后即可开始研判。',
   mock: '演示模式只回放四个预置样例，不消耗模型额度。',
-  live: '原文仅用于本次研判，不做持久化存储。',
+  live: '实时模式会把原文与画像发送至配置的模型服务；不写入数据库。',
   offline: '后端未连接，先启动 npm run dev 再试。',
 }
 
@@ -92,6 +92,38 @@ export function Workspace({
   const [importing, setImporting] = useState(false)
   const [importNote, setImportNote] = useState<{ text: string; tone: 'ok' | 'error' } | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
+  const clearTimer = useRef<number | null>(null)
+
+  const loadedSample = SAMPLES.find((sample) => sample.id === sampleId)
+  const sourceLabel =
+    SOURCE_OPTIONS.find((option) => option.value === sourceType)?.short ?? '未知来源'
+  const finishedEnds = Object.values(state.timings)
+    .map((timing) => timing?.end)
+    .filter((value): value is number => typeof value === 'number')
+  const startedTimes = Object.values(state.timings)
+    .map((timing) => timing?.start)
+    .filter((value): value is number => typeof value === 'number')
+  const totalSeconds =
+    finishedEnds.length > 0 && startedTimes.length > 0
+      ? ((Math.max(...finishedEnds) - Math.min(...startedTimes)) / 1000).toFixed(1)
+      : null
+  const checkedAt = finishedEnds.length
+    ? new Date(Math.max(...finishedEnds)).toLocaleTimeString('zh-CN', { hour12: false })
+    : ''
+
+  const requestClear = () => {
+    if (!confirmClear) {
+      setConfirmClear(true)
+      if (clearTimer.current) window.clearTimeout(clearTimer.current)
+      clearTimer.current = window.setTimeout(() => setConfirmClear(false), 3000)
+      return
+    }
+    setConfirmClear(false)
+    if (clearTimer.current) window.clearTimeout(clearTimer.current)
+    setImportNote(null)
+    onClear()
+  }
 
   const importFile = async (file?: File) => {
     if (!file || importing) return
@@ -152,6 +184,13 @@ export function Workspace({
           </button>
         </div>
       </header>
+
+      {mode === 'mock' && (
+        <div className="demo-banner" role="status">
+          <span className="demo-badge">演示回放</span>
+          <span>以下为预置样例数据，未调用模型；节点耗时是回放耗时，不是真实模型延迟。</span>
+        </div>
+      )}
 
       <div className="workspace-body">
         <section className="zone input-zone" aria-labelledby="input-title">
@@ -236,6 +275,7 @@ export function Workspace({
               value={text}
               onChange={(event) => {
                 setImportNote(null)
+                setConfirmClear(false)
                 onText(event.target.value)
               }}
               onKeyDown={(event) => {
@@ -256,15 +296,30 @@ export function Workspace({
             </div>
           </div>
 
+          {loadedSample ? (
+            <p className="sample-loaded">
+              <i aria-hidden="true" />
+              已载入：{loadedSample.label}
+              <span>演示样例</span>
+            </p>
+          ) : text.trim() ? (
+            <p className="sample-loaded" data-custom="true">
+              <i aria-hidden="true" />
+              自定义文本
+            </p>
+          ) : null}
+
           <div className="samples">
             <div className="samples-head">
               <span>预置样例</span>
               {text.length > 0 && (
-                <button type="button" className="text-btn" onClick={() => {
-                    setImportNote(null)
-                    onClear()
-                  }}>
-                  清空
+                <button
+                  type="button"
+                  className="text-btn"
+                  data-confirm={confirmClear || undefined}
+                  onClick={requestClear}
+                >
+                  {confirmClear ? '再点一次确认清空' : '清空'}
                 </button>
               )}
             </div>
@@ -277,6 +332,7 @@ export function Workspace({
                   aria-pressed={sampleId === sample.id}
                   onClick={() => {
                     setImportNote(null)
+                    setConfirmClear(false)
                     onSample(sample)
                   }}
                 >
@@ -284,6 +340,7 @@ export function Workspace({
                 </button>
               ))}
             </div>
+            <p className="samples-note">预置样例用于演示流程，日期与名称并非赛事官方最新通知。</p>
           </div>
 
           <div className="input-actions">
@@ -314,17 +371,25 @@ export function Workspace({
         </section>
 
         <section className="zone output-zone" aria-labelledby="output-title">
-          <div className="output-head">
+          <div className="output-scroll">
+            <div className="output-head">
             <div>
               <p className="zone-kicker">AI 研判</p>
               <h2 id="output-title" className="zone-title">
                 从原文到决策
               </h2>
             </div>
-            <p className="output-count" aria-hidden="true">
-              {String(doneCount).padStart(2, '0')}
-              <span> / {String(NODES.length).padStart(2, '0')}</span>
-            </p>
+            <div className="output-head-side">
+              <p className="output-count" aria-hidden="true">
+                {String(doneCount).padStart(2, '0')}
+                <span> / {String(NODES.length).padStart(2, '0')}</span>
+              </p>
+              {totalSeconds && (
+                <p className="pipeline-total">
+                  {mode === 'mock' ? '回放总计' : '总耗时'} {totalSeconds}s
+                </p>
+              )}
+            </div>
           </div>
 
           <div
@@ -344,18 +409,31 @@ export function Workspace({
                 startedAt={state.timings[meta.id]?.start}
                 endedAt={state.timings[meta.id]?.end}
                 onRetry={onAnalyze}
+                demo={mode === 'mock'}
               />
             ))}
           </div>
 
           <ReportPanel
-            finished={state.finished && !state.error}
-            running={running}
-            error={state.error}
-            doneCount={doneCount}
-            payloads={state.payloads as Record<NodeId, any>}
-            sourceType={sourceType}
-          />
+              finished={state.finished && !state.error}
+              running={running}
+              error={state.error}
+              doneCount={doneCount}
+              payloads={state.payloads as Record<NodeId, any>}
+              sourceType={sourceType}
+              demo={mode === 'mock' && Boolean(sampleId)}
+            />
+          </div>
+
+          {state.finished && !state.error && (
+            <div className="report-sticky" role="note">
+              <span>
+                来源 {sourceLabel}
+                {checkedAt ? ` · 研判于 ${checkedAt}` : ''}
+              </span>
+              <span>不判定赛事真伪，只提示风险与核验路径。</span>
+            </div>
+          )}
 
           <p className="sr-only" aria-live="polite">
             {running

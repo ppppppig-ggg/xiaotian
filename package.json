@@ -15,7 +15,9 @@
     "eval": "node eval/run.mjs",
     "eval:fault": "node eval/fault.mjs",
     "eval:prompt": "node eval/prompt-ab.mjs",
+    "test": "npm run test:validate && npm run test:rules",
     "test:validate": "tsx eval/validate.test.ts",
+    "test:rules": "tsx eval/rules.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

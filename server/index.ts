@@ -5,8 +5,9 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { extract } from './agents/extractor.js'
 import { factCheck } from './agents/fact-checker.js'
-import { match, type Profile } from './agents/matchmaker.js'
+import { match, emptyMatchResult, type Profile } from './agents/matchmaker.js'
 import { plan } from './agents/planner.js'
+import { detectParticipation } from './rules/participation.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -39,6 +40,7 @@ app.use(express.json({ limit: '64kb' }))
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 function readProfile(body: any): Profile {
+  const hours = Number(body?.hoursPerWeek)
   return {
     major: typeof body?.major === 'string' ? body.major.slice(0, 40) : undefined,
     grade: typeof body?.grade === 'string' ? body.grade.slice(0, 20) : undefined,
@@ -46,9 +48,8 @@ function readProfile(body: any): Profile {
       ? body.skills.filter((s: unknown) => typeof s === 'string').slice(0, 10)
       : undefined,
     goal: typeof body?.goal === 'string' ? body.goal.slice(0, 40) : undefined,
-    hoursPerWeek: Number.isFinite(Number(body?.hoursPerWeek))
-      ? Math.max(1, Math.min(80, Number(body.hoursPerWeek)))
-      : undefined,
+    hoursPerWeek:
+      Number.isFinite(hours) && hours > 0 ? Math.max(1, Math.min(80, hours)) : undefined,
   }
 }
 
@@ -111,10 +112,19 @@ app.post('/api/analyze', async (req, res) => {
 
   try {
     if (USE_MOCK) {
+      const hasProfile = Boolean(
+        profile.major || profile.grade || profile.skills?.length || profile.goal || profile.hoursPerWeek,
+      )
       for (const step of MOCK_SCENARIOS[sampleId]) {
         if (aborted) return
         await sleep(step.delay)
-        send(step.event)
+        // 固定回放里的匹配结果是「填了画像」的版本；
+        // 用户没填画像时改发待补充，避免演示回放再次出现「空画像高分」。
+        if (!hasProfile && step.event.node === 'matchmaker' && step.event.status === 'done') {
+          send({ ...step.event, payload: emptyMatchResult('unknown') })
+        } else {
+          send(step.event)
+        }
       }
       res.end()
       return
@@ -142,8 +152,9 @@ app.post('/api/analyze', async (req, res) => {
     if (aborted) return
 
     // ③ 匹配评估
+    const participation = detectParticipation(text, extraction?.event)
     send({ node: 'matchmaker', status: 'running' })
-    const matchResult = await match(extraction?.event ?? {}, profile)
+    const matchResult = await match(extraction?.event ?? {}, profile, participation)
 
     // 风险优先于匹配：核查判红的赛事，无论契合度多高都不推荐
     if (risk.verdict === 'red' && matchResult.recommendation !== '不建议') {
@@ -158,7 +169,7 @@ app.post('/api/analyze', async (req, res) => {
 
     // ④ 备赛规划
     send({ node: 'planner', status: 'running' })
-    const planResult = await plan(extraction?.event ?? {}, profile, matchResult)
+    const planResult = await plan(extraction?.event ?? {}, profile, matchResult, participation)
     send({ node: 'planner', status: 'done', payload: planResult })
 
     send({ node: 'all', status: 'done' })

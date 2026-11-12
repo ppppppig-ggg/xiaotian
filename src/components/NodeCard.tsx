@@ -8,6 +8,7 @@ interface Props {
   startedAt?: number
   endedAt?: number
   onRetry: () => void
+  demo?: boolean
 }
 
 const VERDICT_LABEL: Record<string, string> = {
@@ -68,15 +69,19 @@ function Summary({ meta, payload }: { meta: NodeMeta; payload: any }) {
     return (
       <>
         <p className="node-score-row">
-          <span className="node-score">{payload.fit_score}</span>
+          <span className="node-score">
+            {typeof payload.fit_score === 'number' ? payload.fit_score : '待补充'}
+          </span>
           <span className="node-verdict" data-verdict="plain">
-            {payload.recommendation}
+            {payload.profile_incomplete ? '暂停结论' : payload.recommendation}
           </span>
         </p>
         <p className="node-meta">
-          {payload.hard_blockers?.length > 0
-            ? `硬门槛 ${payload.hard_blockers.length} 条`
-            : '四维加权分'}
+          {payload.profile_incomplete
+            ? '填写画像后重算'
+            : payload.hard_blockers?.length > 0
+              ? `硬门槛 ${payload.hard_blockers.length} 条`
+              : '四维加权分'}
         </p>
       </>
     )
@@ -95,7 +100,7 @@ function Summary({ meta, payload }: { meta: NodeMeta; payload: any }) {
   )
 }
 
-export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }: Props) {
+export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry, demo = false }: Props) {
   const elapsed = useElapsed(startedAt, endedAt)
   const skipped = Boolean(payload?.skipped)
 
@@ -134,7 +139,10 @@ export function NodeCard({ meta, status, payload, startedAt, endedAt, onRetry }:
       </div>
 
       <div className="node-foot">
-        <span className="node-time">{elapsed !== null ? `${elapsed.toFixed(1)}s` : '—'}</span>
+        <span className="node-time">
+          {demo ? '回放 ' : ''}
+          {elapsed !== null ? `${elapsed.toFixed(1)}s` : '—'}
+        </span>
         {status === 'error' && (
           <button type="button" className="node-retry" onClick={onRetry}>
             重试

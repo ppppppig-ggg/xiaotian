@@ -1,6 +1,7 @@
 import { callJSON } from '../llm.js'
 import { FACT_CHECK_STEPS_PROMPT } from '../prompts/fact-checker.js'
 import { evaluateRisk } from '../rules/risk.js'
+import { buildVerification } from '../rules/verification.js'
 
 /**
  * 风险核查 = 确定性规则算分 + LLM 生成核验步骤。
@@ -9,6 +10,7 @@ import { evaluateRisk } from '../rules/risk.js'
  */
 export async function factCheck(extraction: any, rawText: string, sourceType = 'unknown') {
   const risk = evaluateRisk(extraction, rawText, sourceType)
+  const verification = buildVerification(extraction, risk)
 
   let verifySteps = risk.fallback_steps
   let verdictReason = ''
@@ -43,7 +45,16 @@ export async function factCheck(extraction: any, rawText: string, sourceType = '
     known_facts: risk.known_facts,
     matched_event_id: risk.matched_event_id,
     verify_steps: verifySteps,
-    verdict_reason: verdictReason || `权威度 ${risk.authority_score}，命中 ${risk.risk_flags.length} 项风险信号`,
+    verdict_reason:
+      (verdictReason || `权威度 ${risk.authority_score}，命中 ${risk.risk_flags.length} 项风险信号`) +
+      (risk.risk_flags.some((flag) => flag.code === 'source_conflict')
+        ? '；存在来源冲突，冲突消除前不判低风险'
+        : ''),
     disclaimer: '本工具不判定赛事真假，仅提示风险与核验路径，请以主办方官方信息为准。',
+    verification: verification.items,
+    verification_summary: verification.summary,
+    checked_at: verification.checked_at,
+    score_breakdown: risk.score_breakdown,
+    evidence_coverage: risk.evidence_coverage,
   }
 }

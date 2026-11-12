@@ -9,10 +9,10 @@ export interface ProfileFormValue {
 
 export const EMPTY_PROFILE: ProfileFormValue = {
   major: '',
-  grade: '大三',
+  grade: '',
   skills: '',
-  goal: '求职',
-  hours: 10,
+  goal: '',
+  hours: 0,
 }
 
 export const PROFILE_STORAGE_KEY = 'campusrace-radar:profile'

@@ -92,7 +92,19 @@ export default function App() {
   const [profile, setProfile] = useState<ProfileFormValue>(() => {
     try {
       const raw = localStorage.getItem(PROFILE_STORAGE_KEY)
-      if (raw) return { ...EMPTY_PROFILE, ...JSON.parse(raw) }
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        // 旧版本把「大三 / 求职 / 10 小时」当默认值写进了本地；
+        // 这不是用户填写的内容，迁移时按空画像处理，避免空画像被算出高分。
+        const isLegacyDefault =
+          !parsed?.major &&
+          !parsed?.skills &&
+          parsed?.grade === '大三' &&
+          parsed?.goal === '求职' &&
+          Number(parsed?.hours) === 10
+        if (isLegacyDefault) return EMPTY_PROFILE
+        return { ...EMPTY_PROFILE, ...parsed }
+      }
     } catch {
       // 忽略损坏的本地数据
     }
