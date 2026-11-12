@@ -258,7 +258,7 @@ export function ReportPanel({ finished, running, error, doneCount, payloads, sou
                 <span className="section-rule" aria-hidden="true" />
                 <span className="section-note">
                   {verificationSummary.verified ?? 0} 已核对 · {verificationSummary.conflict ?? 0} 冲突 ·{' '}
-                  {verificationSummary.missing ?? 0} 无来源
+                  {verificationSummary.missing ?? 0} 无来源 · {verificationSummary.unverified ?? 0} 待核验
                 </span>
               </h3>
               <ul className="verify-facts">

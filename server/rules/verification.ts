@@ -61,7 +61,7 @@ export function buildVerification(extraction: any, risk: RiskResult): Verificati
     let status: VerificationStatus
     if (!value) status = 'missing'
     else if (conflict) status = 'conflict'
-    else if (trusted) status = 'verified'
+    else if (trusted && quoteText) status = 'verified'
     else status = 'unverified'
 
     items.push({
@@ -69,19 +69,15 @@ export function buildVerification(extraction: any, risk: RiskResult): Verificati
       label,
       value: value || '未提供',
       status,
-      source: quoteText
-        ? `原文：“${quoteText}”`
-        : trusted
-          ? '本地白名单命中'
-          : '原文未提供逐字证据',
+      source: quoteText ? `原文：“${quoteText}”` : '原文未提供逐字证据',
       note:
         status === 'verified'
-          ? '本地白名单可对照，仍需以主办方最新通知为准'
+          ? '原文有引用，且本地白名单可对照；仍需以主办方最新通知为准'
           : status === 'conflict'
             ? '不同来源说法不一致，无法据此下结论'
             : status === 'missing'
               ? note || '原文未提供，需要向主办方确认'
-              : '有原文出处，但未与官方来源比对',
+              : '原文证据不足，需与主办方官方来源比对',
     })
   }
 

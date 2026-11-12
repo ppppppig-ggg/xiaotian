@@ -55,26 +55,28 @@
         "evidence": {
           "name": "【传智杯】第十届传智杯全国大学生计算机应用能力大赛正式启动！",
           "organizer": "主办单位：传智教育。",
+          "tracks": "本届新增 Vibe Coding 赛道，要求以 AI 辅助完成轻量 Web 应用，评审重点关注过程可复现性。",
           "registration.deadline": "报名截止 2026-11-20",
-          "registration.url": "报名请登录官网 https://www.itcast.cn/ 提交材料",
-          "submission.deadline": "作品提交截止 2026-12-15",
-          "tracks": "本届新增 Vibe Coding 赛道，要求以 AI 辅助完成轻量 Web 应用，评审重点关注过程可复现性"
+          "registration.url": "报名请登录官网 https://www.itcast.cn/ 提交材料。",
+          "submission.deadline": "作品提交截止 2026-12-15。"
         },
         "missing_fields": [
           "registration.fee",
+          "registration.channel",
           "submission.method",
           "eligibility",
           "prizes",
-          "contact"
+          "contact",
+          "source_versions.publish_date"
         ],
         "warnings": [
-          "来源为公众号推文，未提供发布日期",
-          "赛事级别“国家级”依据名称中的“全国”推断，原文未明示主办层级",
-          "missing_fields 声明 5 项，实际空字段 3 项，可能存在遗漏"
+          "来源为微信公众号推文，未提供发布时间",
+          "赛事级别“国家级”仅依据赛事名称中的“全国”推断，原文未明确标注级别",
+          "missing_fields 声明 7 项，实际空字段 3 项，可能存在遗漏"
         ],
         "injection_detected": false,
         "confidence": 0.6,
-        "disclaimer": "本结果由自动抽取生成，仅依据所给原文，信息以主办方官方发布为准。"
+        "disclaimer": "本结果由自动抽取生成，仅依据所给原文，未核实信息真实性，请以主办方官方发布为准。"
       }
     }
   },
@@ -103,27 +105,27 @@
         "matched_event_id": "chuanzhibei",
         "verify_steps": [
           {
-            "action": "打开传智教育官网，找到「传智杯」赛事专区，核对第十届赛事通知与报名截止时间",
+            "action": "打开传智教育官网，找到「传智杯」赛事专区，核对第十届赛事通知原文",
             "where": "https://www.itcast.cn/",
-            "pass_criteria": "页面上能看到「第十届传智杯全国大学生计算机应用能力大赛」名称、报名截止时间 2026-11-20，且与你看到的资讯一致"
+            "pass_criteria": "页面标题或正文出现「第十届传智杯全国大学生计算机应用能力大赛」，且报名截止 2026-11-20、提交截止 2026-12-15 与资讯一致"
           },
           {
-            "action": "在赛事专区核对「Vibe Coding 赛道」的赛题说明与评审要求",
-            "where": "https://www.itcast.cn/ 内的传智杯赛道页面",
-            "pass_criteria": "页面明确写出该赛道要求以 AI 辅助完成轻量 Web 应用，并说明过程可复现性的评审方式"
+            "action": "在赛事专区核对 Vibe Coding 赛道的赛题说明与评审规则",
+            "where": "https://www.itcast.cn/ 赛事专区内的赛道页面",
+            "pass_criteria": "能看到「Vibe Coding 赛道」名称，并明确写出「过程可复现性」为评审要点"
           },
           {
-            "action": "核对作品提交截止时间与提交方式",
-            "where": "https://www.itcast.cn/ 内的传智杯通知或提交入口",
-            "pass_criteria": "页面写明提交截止时间为 2026-12-15，并给出具体提交渠道（平台链接或邮箱）"
+            "action": "核对报名入口与费用说明",
+            "where": "https://www.itcast.cn/ 赛事专区的报名页",
+            "pass_criteria": "报名入口可正常打开，页面写明报名方式（官网/表单）及是否收费；若显示收费金额，与资讯中 fee 为空不一致时以官网为准"
           },
           {
-            "action": "确认报名是否收费及参赛资格要求",
-            "where": "https://www.itcast.cn/ 内的传智杯报名页或常见问题页",
-            "pass_criteria": "页面明确写出报名费用（免费或具体金额）以及参赛对象（如全国高校在校生）"
+            "action": "核对作品提交方式与提交入口",
+            "where": "https://www.itcast.cn/ 赛事专区的提交说明页",
+            "pass_criteria": "页面写明提交渠道（邮箱/平台链接）与截止时间 2026-12-15，且提交入口可访问"
           }
         ],
-        "verdict_reason": "本地白名单命中传智杯且官网域名 itcast.cn 与资讯一致，报名与提交时间线明确，权威度 100，判定为 green。",
+        "verdict_reason": "本地白名单命中传智杯主办方传智教育，且资讯给出的 HTTPS 链接域名 itcast.cn 与官方域名一致，报名与提交两条时间线均明确，未发现风险项，故为绿色。",
         "disclaimer": "本工具不判定赛事真假，仅提示风险与核验路径，请以主办方官方信息为准。",
         "verification": [
           {
@@ -132,7 +134,7 @@
             "value": "第十届传智杯全国大学生计算机应用能力大赛",
             "status": "verified",
             "source": "原文：“【传智杯】第十届传智杯全国大学生计算机应用能力大赛正式启动！”",
-            "note": "本地白名单可对照，仍需以主办方最新通知为准"
+            "note": "原文有引用，且本地白名单可对照；仍需以主办方最新通知为准"
           },
           {
             "key": "organizer",
@@ -140,30 +142,30 @@
             "value": "传智教育",
             "status": "verified",
             "source": "原文：“主办单位：传智教育。”",
-            "note": "本地白名单可对照，仍需以主办方最新通知为准"
+            "note": "原文有引用，且本地白名单可对照；仍需以主办方最新通知为准"
           },
           {
             "key": "registration.url",
             "label": "报名入口",
             "value": "https://www.itcast.cn/",
             "status": "verified",
-            "source": "原文：“报名请登录官网 https://www.itcast.cn/ 提交材料”",
-            "note": "本地白名单可对照，仍需以主办方最新通知为准"
+            "source": "原文：“报名请登录官网 https://www.itcast.cn/ 提交材料。”",
+            "note": "原文有引用，且本地白名单可对照；仍需以主办方最新通知为准"
           },
           {
             "key": "deadline",
             "label": "报名 / 提交截止",
             "value": "报名 2026-11-20 · 提交 2026-12-15",
             "status": "verified",
-            "source": "原文：“报名截止 2026-11-20；作品提交截止 2026-12-15”",
-            "note": "本地白名单可对照，仍需以主办方最新通知为准"
+            "source": "原文：“报名截止 2026-11-20；作品提交截止 2026-12-15。”",
+            "note": "原文有引用，且本地白名单可对照；仍需以主办方最新通知为准"
           },
           {
             "key": "eligibility",
             "label": "参赛资格 / 提交物",
             "value": "未提供",
             "status": "missing",
-            "source": "本地白名单命中",
+            "source": "原文未提供逐字证据",
             "note": "原文未说明资格或提交物"
           }
         ],
@@ -173,7 +175,7 @@
           "missing": 1,
           "unverified": 0
         },
-        "checked_at": "2026-11-12T08:27:33.083Z",
+        "checked_at": "2026-11-12T08:34:10.097Z",
         "score_breakdown": [
           {
             "label": "基础分",
@@ -223,41 +225,41 @@
       "node": "matchmaker",
       "status": "done",
       "payload": {
-        "fit_score": 81,
+        "fit_score": 80,
         "recommendation": "优先冲",
         "breakdown": {
           "skill_fit": {
-            "score": 88,
-            "reason": "Vibe Coding 赛道要求用 AI 辅助做轻量 Web 应用，你的 React+TypeScript+Node.js 正好是这类项目的主力技术栈，几乎不需要额外学新东西。",
+            "score": 85,
+            "reason": "Vibe Coding 赛道要求用 AI 辅助做轻量 Web 应用，你的 React+TypeScript+Node.js 栈直接覆盖前端与后端，只需补上 AI 编码工具的使用和过程记录。",
             "weight": 0.4,
-            "contribution": 35.2
+            "contribution": 34
           },
           "time_fit": {
             "score": 80,
-            "reason": "从今天到 12 月 15 日提交还有约 7 个月，按每周 10 小时算有近 280 小时，做一个轻量 Web 应用并整理可复现过程绰绰有余。",
+            "reason": "从今天到 2026-12-15 提交还有约 11 个月，按每周 10 小时算有 400+ 小时，做一个轻量 Web 应用并整理可复现过程绰绰有余。",
             "weight": 0.3,
             "contribution": 24
           },
           "goal_value": {
             "score": 70,
-            "reason": "国家级赛事名头对求职简历有加分，但传智杯是培训机构主办，含金量不如教育部或大厂主办赛事，更适合作为作品集里的一个项目而非核心筹码。",
+            "reason": "国家级赛事名头对求职简历有加分，但传智杯是培训机构主办、认可度不如教育部榜单赛事，且赛道偏 AI 工具应用而非工程深度。",
             "weight": 0.2,
             "contribution": 14
           },
           "access_fit": {
             "score": 75,
-            "reason": "计算机专业大三对口，赛事未设年级专业硬限制；参赛形式未识别，若需组队你需自行确认队友，但这不是硬门槛。",
+            "reason": "计算机专业大三对口，赛事未设年级专业限制；但参赛形式未识别，若要求组队需自行找队友。",
             "weight": 0.1,
             "contribution": 7.5
           }
         },
         "hard_blockers": [],
         "next_actions": [
-          "去官网确认报名截止（2026-11-20）和参赛形式是个人还是组队，先把名报上",
-          "用 1-2 周做一个 React+TS 的轻量 Web 应用原型，重点记录 AI 辅助的每一步 prompt 和决策过程",
-          "把过程整理成可复现的 README 或录屏，这是该赛道评审的核心关注点"
+          "去官网确认参赛形式（个人/组队）、报名是否需学校审核，以及 Vibe Coding 赛道的具体评审细则",
+          "用 1-2 周做一个 React+AI 辅助的小 Demo，同步记录 prompt 和迭代过程，验证可复现性要求能否满足",
+          "把该赛事作为秋招前的练手项目排进日程，优先保证实习和核心课，别为它挤占求职主线"
         ],
-        "summary": "技能栈和赛道高度重合，时间也充足，值得作为求职作品集项目冲一把。唯一要留意的是赛事含金量中等，别把它当成求职的唯一筹码。",
+        "summary": "技能栈和赛道高度对口、时间充裕，是低风险的作品集补充项。但赛事含金量中等，建议当作练手而非主攻目标，投入控制在每周 10 小时内。",
         "profile_incomplete": false,
         "profile_missing": [],
         "participation_type": "unknown",
@@ -268,7 +270,7 @@
           "access_fit": 0.1
         },
         "contributions": {
-          "skill_fit": 35.2,
+          "skill_fit": 34,
           "time_fit": 24,
           "goal_value": 14,
           "access_fit": 7.5
@@ -296,23 +298,23 @@
         "buffered_weeks": 1,
         "phases": [
           {
-            "name": "需求确认与原型设计",
+            "name": "需求与原型",
             "week_range": "W1",
             "tasks": [
               {
-                "task": "明确轻量Web应用主题，完成需求文档和低保真原型",
+                "task": "确定轻量 Web 应用主题，完成需求文档和低保真原型",
                 "owner": "我",
-                "output": "需求文档（含功能列表、用户故事）和低保真原型图（可用Figma或手绘）",
-                "acceptance": "文档包含至少3个核心功能点，原型图覆盖主要页面流程",
+                "output": "需求文档（含功能列表、用户故事）和 Figma 低保真原型链接",
+                "acceptance": "文档包含至少 3 个核心功能点，原型可交互演示主要流程",
                 "status": "待办",
                 "due": "W1",
                 "depends_on": []
               },
               {
-                "task": "搭建项目基础框架（React+TypeScript+Node.js），配置开发环境",
+                "task": "搭建项目基础框架（React + TypeScript + Node.js），配置开发环境",
                 "owner": "我",
-                "output": "可运行的项目脚手架，包含前端和后端基础结构",
-                "acceptance": "本地运行npm start能启动前端，后端能响应健康检查接口",
+                "output": "可运行的本地开发环境，包含前后端基础代码和 README",
+                "acceptance": "运行 npm start 后前端页面可访问，后端 API 返回健康检查",
                 "status": "待办",
                 "due": "W1",
                 "depends_on": []
@@ -320,113 +322,96 @@
             ]
           },
           {
-            "name": "核心功能开发与AI辅助记录",
-            "week_range": "W2",
+            "name": "核心功能开发",
+            "week_range": "W2-W3",
             "tasks": [
               {
-                "task": "实现核心功能1（如用户登录/数据展示），使用AI辅助生成代码并记录提示词",
+                "task": "实现应用核心功能模块（如用户认证、数据 CRUD）",
                 "owner": "我",
-                "output": "功能1的代码实现和AI交互记录文档（含提示词和生成结果）",
-                "acceptance": "功能1可演示，能完成一次完整操作流程；记录文档包含至少3次AI交互",
+                "output": "可演示的核心功能代码，包含前后端接口和数据库集成",
+                "acceptance": "能完成一次完整的用户注册登录和增删改查操作",
                 "status": "待办",
                 "due": "W2",
                 "depends_on": [
-                  "W1需求确认与原型设计"
+                  "W1 需求与原型"
                 ]
               },
               {
-                "task": "实现核心功能2（如数据提交/列表），使用AI辅助并记录",
+                "task": "集成 AI 辅助编码工具（如 GitHub Copilot），记录使用过程",
                 "owner": "我",
-                "output": "功能2的代码实现和AI交互记录",
-                "acceptance": "功能2可演示，与功能1串联完成端到端流程",
+                "output": "AI 辅助编码日志（截图和说明），展示 AI 如何帮助生成代码",
+                "acceptance": "日志包含至少 5 个 AI 生成代码片段及其修改记录",
                 "status": "待办",
-                "due": "W2",
+                "due": "W3",
                 "depends_on": [
-                  "W1需求确认与原型设计"
+                  "W2 核心功能开发"
+                ]
+              },
+              {
+                "task": "完成应用主要界面 UI 和交互逻辑",
+                "owner": "我",
+                "output": "可交互的前端页面，覆盖所有核心功能",
+                "acceptance": "用户能通过界面完成主要业务流程，无阻塞性 bug",
+                "status": "待办",
+                "due": "W3",
+                "depends_on": [
+                  "W2 核心功能开发"
                 ]
               }
             ]
           },
           {
-            "name": "功能完善与过程可复现性强化",
-            "week_range": "W3",
-            "tasks": [
-              {
-                "task": "实现核心功能3（如搜索/过滤），并优化界面交互",
-                "owner": "我",
-                "output": "功能3代码和优化后的UI",
-                "acceptance": "功能3可演示，整体应用无阻断性bug",
-                "status": "待办",
-                "due": "W3",
-                "depends_on": [
-                  "W2核心功能开发与AI辅助记录"
-                ]
-              },
-              {
-                "task": "整理AI辅助开发过程记录，形成可复现的步骤文档",
-                "owner": "我",
-                "output": "过程记录文档（含环境配置、AI提示词、代码生成与修改记录）",
-                "acceptance": "文档步骤清晰，他人可按文档复现主要功能开发过程",
-                "status": "待办",
-                "due": "W3",
-                "depends_on": [
-                  "W2核心功能开发与AI辅助记录"
-                ]
-              }
-            ]
-          },
-          {
-            "name": "测试、部署与提交物准备",
+            "name": "测试与优化",
             "week_range": "W4",
             "tasks": [
               {
-                "task": "进行功能测试和修复关键bug，部署应用至公网可访问",
+                "task": "进行功能测试和性能优化，修复关键 bug",
                 "owner": "我",
-                "output": "部署上线的应用链接和测试报告",
-                "acceptance": "应用可通过公网URL访问，核心功能流程无错误",
+                "output": "测试报告（含 bug 列表和修复记录）和优化后的代码",
+                "acceptance": "所有核心功能测试通过，页面加载时间小于 3 秒",
                 "status": "待办",
                 "due": "W4",
                 "depends_on": [
-                  "W3功能完善与过程可复现性强化"
+                  "W3 核心功能开发"
                 ]
               },
               {
-                "task": "编写说明文档（项目介绍、技术栈、AI使用说明）",
+                "task": "编写项目说明文档和过程记录文档",
                 "owner": "我",
-                "output": "说明文档（Markdown或PDF）",
-                "acceptance": "文档包含项目概述、功能列表、AI辅助开发说明和复现步骤",
+                "output": "README.md（项目介绍、安装运行指南）和过程记录文档（开发日志、AI 使用记录）",
+                "acceptance": "文档结构清晰，包含可复现的步骤和 AI 辅助过程说明",
                 "status": "待办",
                 "due": "W4",
                 "depends_on": [
-                  "W3功能完善与过程可复现性强化"
-                ]
-              },
-              {
-                "task": "录制演示视频（3-5分钟），展示应用功能和AI辅助过程",
-                "owner": "我",
-                "output": "演示视频文件",
-                "acceptance": "视频清晰展示应用完整流程和AI交互记录",
-                "status": "待办",
-                "due": "W4",
-                "depends_on": [
-                  "W3功能完善与过程可复现性强化"
+                  "W3 核心功能开发"
                 ]
               }
             ]
           },
           {
-            "name": "缓冲与最终提交",
+            "name": "提交准备",
             "week_range": "W5",
             "tasks": [
               {
-                "task": "检查所有提交物（作品链接、说明文档、演示视频、过程记录）并提交",
+                "task": "录制演示视频，展示应用功能和 AI 辅助过程",
                 "owner": "我",
-                "output": "提交确认截图或回执",
-                "acceptance": "所有材料符合赛事要求，成功提交",
+                "output": "5 分钟以内的演示视频，上传至视频平台并生成链接",
+                "acceptance": "视频清晰展示应用完整流程和 AI 辅助编码的关键步骤",
                 "status": "待办",
                 "due": "W5",
                 "depends_on": [
-                  "W4测试、部署与提交物准备"
+                  "W4 测试与优化"
+                ]
+              },
+              {
+                "task": "整理最终提交物：作品链接、说明文档、演示视频、过程记录",
+                "owner": "我",
+                "output": "提交包（含所有材料的压缩包或在线链接列表）",
+                "acceptance": "所有材料齐全，符合赛事要求，链接可访问",
+                "status": "待办",
+                "due": "W5",
+                "depends_on": [
+                  "W5 演示视频"
                 ]
               }
             ]
@@ -438,24 +423,20 @@
             "due": "W1"
           },
           {
-            "label": "核心功能1和2可演示",
-            "due": "W2"
-          },
-          {
-            "label": "所有核心功能完成且过程记录可复现",
+            "label": "核心功能可演示",
             "due": "W3"
           },
           {
-            "label": "应用部署上线，提交物初稿完成",
+            "label": "测试通过并完成文档",
             "due": "W4"
           },
           {
-            "label": "最终提交完成",
+            "label": "提交所有材料",
             "due": "W5"
           }
         ],
-        "risk_note": "每周仅10小时，需严格按计划执行，避免功能蔓延；AI辅助记录务必及时整理，确保可复现性。",
-        "summary": "基于5周剩余时间，规划4周开发加1周缓冲，聚焦轻量Web应用开发与AI辅助过程记录，确保可复现性，最终完成所有提交物。",
+        "risk_note": "AI 辅助编码过程记录需详细，否则可能影响可复现性评分；每周 10 小时需高效利用，避免延期。",
+        "summary": "基于 5 周剩余时间，规划 4 周开发加 1 周缓冲，每周任务明确交付物和验收标准，重点突出 AI 辅助过程记录，确保可复现性。",
         "weeks_left": 5,
         "deadline": "2026-12-15",
         "deadline_time": 1797292800000,
